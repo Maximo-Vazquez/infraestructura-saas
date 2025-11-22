@@ -1,0 +1,34 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-principal
+  annotations:
+    # Si usas Nginx Ingress Controller:
+    kubernetes.io/ingress.class: "nginx"
+    # Si quieres subir el límite de tamaño de archivos (útil para el SaaS):
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+spec:
+  rules:
+    # --- REGLA 1: APP VENTAS ---
+    - host: ventas.midominio.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ventas-service  # Debe coincidir con el service.yaml del Repo Ventas
+                port:
+                  number: 80
+
+    # --- REGLA 2: APP SAAS ---
+    - host: sistema.midominio.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: saas-service    # Debe coincidir con el service.yaml del Repo SaaS
+                port:
+                  number: 80
