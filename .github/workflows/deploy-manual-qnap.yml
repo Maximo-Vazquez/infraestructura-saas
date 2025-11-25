@@ -1,0 +1,37 @@
+name: Deploy Manual Ingress a QNAP
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del codigo
+        uses: actions/checkout@v4
+
+      - name: Copiar ingress al NAS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.NAS_HOST }}
+          username: ${{ secrets.NAS_USER }}
+          key: ${{ secrets.NAS_SSH_KEY }}
+          port: ${{ secrets.NAS_PORT }}
+          source: "ingress/*"
+          target: "/share/homes/${{ secrets.NAS_USER }}/deployments/ingress-global"
+
+      - name: Aplicar ingress en el NAS
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.NAS_HOST }}
+          username: ${{ secrets.NAS_USER }}
+          key: ${{ secrets.NAS_SSH_KEY }}
+          port: ${{ secrets.NAS_PORT }}
+          script: |
+            echo "Iniciando despliegue manual del Ingress global en QNAP..."
+            export PATH=$PATH:/usr/local/bin:/share/CACHEDEV1_DATA/.qpkg/container-station/bin:/share/ZFS530_DATA/.qpkg/container-station/bin
+            # export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+            cd /share/homes/${{ secrets.NAS_USER }}/deployments/ingress-global
+            kubectl apply -f ingress/global-ingress.yaml
+            kubectl get ingress ingress-principal -o wide
+            echo "Despliegue finalizado con exito."

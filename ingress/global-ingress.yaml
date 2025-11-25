@@ -9,15 +9,15 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-body-size: "10m"
 spec:
   rules:
-    # --- REGLA 1: APP VENTAS ---
-    - host: ventas.midominio.com
+    # --- REGLA 1: APP indumentaria ---
+    - host: indumentaria.midominio.com
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: ventas-service  # Debe coincidir con el service.yaml del Repo Ventas
+                name: indumentaria-service  # Debe coincidir con el service.yaml del Repo indumentaria
                 port:
                   number: 80
 
