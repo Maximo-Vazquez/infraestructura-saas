@@ -6,7 +6,7 @@ Pasos ordenados para levantar el Ingress, la página de mantenimiento y luego la
 - k3s/Kubernetes funcionando y `kubectl` accesible (usa `/etc/rancher/k3s/k3s.yaml` si es k3s).
 - Puertos abiertos/forwardeados en el NAS o router: `61180` (HTTP) y `61443` (HTTPS) hacia el host del NAS.
 - Dominio de entrada: `mi-nas-vaz.myqnapcloud.com` (o CNAMEs que apunten allí).
-- Certificado TLS emitido por cert-manager (Let's Encrypt HTTP-01) en el Secret `wildcard-mydominio-tls` para `mi-nas-vaz.myqnapcloud.com` y `sistema.mi-nas-vaz.myqnapcloud.com`. Instala cert-manager (`kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.15.3/cert-manager.yaml`), edita el email en `ingress/cert-manager.yaml` y aplica ese archivo.
+- Certificado TLS emitido por cert-manager (Let's Encrypt HTTP-01) en el Secret `wildcard-mydominio-tls` para `mi-nas-vaz.myqnapcloud.com` y `sistema.mycloudnas.com`. Instala cert-manager (`kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.15.3/cert-manager.yaml`), edita el email en `ingress/cert-manager.yaml` y aplica ese archivo.
 
 ## 1. Instalar el Nginx Ingress Controller (una sola vez o cuando lo actualices)
 Opción manual:
@@ -34,7 +34,7 @@ kubectl get ingress ingress-principal -o wide
 ```
 
 ## 4. Verificación inicial
-- Probar `http(s)://mi-nas-vaz.myqnapcloud.com` y `sistema.mi-nas-vaz.myqnapcloud.com`: debe verse la página de mantenimiento.
+- Probar `http(s)://mi-nas-vaz.myqnapcloud.com` y `sistema.mycloudnas.com`: debe verse la página de mantenimiento.
 - Si ves 503:
   - Asegura que `maintenance-service` y su Deployment estén Ready.
   - Confirma que el controller está arriba: `kubectl -n ingress-nginx get pods`.
@@ -48,7 +48,7 @@ kubectl get ingress ingress-principal -o wide
 Cuando `indumentaria-service` y `saas-service` estén desplegados en el mismo namespace (`default`):
 1. Edita `ingress/global-ingress.yaml` y cambia los `service.name`:
    - `mi-nas-vaz.myqnapcloud.com` -> `indumentaria-service`
-   - `sistema.mi-nas-vaz.myqnapcloud.com` -> `saas-service`
+   - `sistema.mycloudnas.com` -> `saas-service`
    - catch-all -> el backend por defecto que prefieras (ej. `indumentaria-service`)
 2. Aplica de nuevo:
    ```bash

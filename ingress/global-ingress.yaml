@@ -12,7 +12,7 @@ spec:
   tls:
     - hosts:
         - mi-nas-vaz.myqnapcloud.com           # Host base expuesto por QNAP
-        - sistema.mi-nas-vaz.myqnapcloud.com   # Subdominio fijo para SaaS
+        - sistema.mycloudnas.com               # Subdominio fijo para SaaS
       secretName: wildcard-mydominio-tls       # Lo rellena cert-manager (Let's Encrypt)
   rules:
     # --- REGLA BASE: dominio principal QNAP -> indumentaria ---
@@ -28,7 +28,7 @@ spec:
                   number: 80
 
     # --- REGLA ESPECIFICA: subdominio fijo para el SaaS ---
-    - host: sistema.mi-nas-vaz.myqnapcloud.com
+    - host: sistema.mycloudnas.com
       http:
         paths:
           - path: /

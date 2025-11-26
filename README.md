@@ -25,8 +25,8 @@ Recuerda abrir/forwardear en el NAS/Router los puertos 61180 (HTTP) y 61443 (HTT
 
 - Host de entrada: `mi-nas-vaz.myqnapcloud.com` (QNAP). El Ingress está configurado para ese host y cualquier subdominio.
 - Página temporal: todas las rutas apuntan a `maintenance-service` hasta que las apps estén listas (ver más abajo cómo cambiarlo).
-- SaaS: usa `sistema.mi-nas-vaz.myqnapcloud.com` (también temporalmente apunta a maintenance).
-- TLS: cert-manager emite el secreto `wildcard-mydominio-tls` (Let's Encrypt HTTP-01) para `mi-nas-vaz.myqnapcloud.com` y `sistema.mi-nas-vaz.myqnapcloud.com`. Edita el email en `ingress/cert-manager.yaml` y aplica ese manifiesto.
+- SaaS: usa `sistema.mycloudnas.com` (también temporalmente apunta a maintenance).
+- TLS: cert-manager emite el secreto `wildcard-mydominio-tls` (Let's Encrypt HTTP-01) para `mi-nas-vaz.myqnapcloud.com` y `sistema.mycloudnas.com`. Edita el email en `ingress/cert-manager.yaml` y aplica ese manifiesto.
 - DNS:
   - Si usas el dominio QNAP tal cual, no hay que crear registros (ya apunta al NAS). Solo asegura el port forwarding 61180→61180 y 61443→61443 hacia el NAS.
   - Si quieres un dominio propio, crea CNAMEs que apunten a `mi-nas-vaz.myqnapcloud.com`:
@@ -60,7 +60,7 @@ HTML separado en `ingress/maintenance/index.html` (no incrustado en YAML).
 3. Cuando las apps estén listas:
    - Cambia en `ingress/global-ingress.yaml` los `service.name` a:
      - `mi-nas-vaz.myqnapcloud.com` -> `indumentaria-service`
-     - `sistema.mi-nas-vaz.myqnapcloud.com` -> `saas-service`
+    - `sistema.mycloudnas.com` -> `saas-service`
      - catch-all -> lo que quieras por defecto (ej. `indumentaria-service`)
    - Vuelve a aplicar: `kubectl apply -f ingress/global-ingress.yaml`
 

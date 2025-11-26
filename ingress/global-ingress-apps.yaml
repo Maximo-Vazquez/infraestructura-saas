@@ -12,7 +12,7 @@ spec:
   tls:
     - hosts:
         - mi-nas-vaz.myqnapcloud.com
-        - sistema.mi-nas-vaz.myqnapcloud.com
+        - sistema.mycloudnas.com
       secretName: wildcard-mydominio-tls  # Lo rellena cert-manager (Let's Encrypt)
   rules:
     - host: mi-nas-vaz.myqnapcloud.com
@@ -25,7 +25,7 @@ spec:
                 name: indumentaria-service
                 port:
                   number: 80
-    - host: sistema.mi-nas-vaz.myqnapcloud.com
+    - host: sistema.mycloudnas.com
       http:
         paths:
           - path: /

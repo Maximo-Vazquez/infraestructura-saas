@@ -28,4 +28,4 @@ spec:
     name: letsencrypt-http
   dnsNames:
     - mi-nas-vaz.myqnapcloud.com
-    - sistema.mi-nas-vaz.myqnapcloud.com
+    - sistema.mycloudnas.com
