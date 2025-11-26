@@ -21,6 +21,49 @@ El controlador se despliega con NodePort (puertos 61180/61443 que permite QNAP).
 
 Recuerda abrir/forwardear en el NAS/Router los puertos 61180 (HTTP) y 61443 (HTTPS) hacia afuera si quieres exponer servicios publicamente.
 
+## Dominios y DNS (mi-nas-vaz.myqnapcloud.com)
+
+- Host de entrada: `mi-nas-vaz.myqnapcloud.com` (QNAP). El Ingress está configurado para ese host y cualquier subdominio.
+- Página temporal: todas las rutas apuntan a `maintenance-service` hasta que las apps estén listas (ver más abajo cómo cambiarlo).
+- SaaS: usa `sistema.mi-nas-vaz.myqnapcloud.com` (también temporalmente apunta a maintenance).
+- TLS: el secreto `wildcard-mydominio-tls` debe contener CN/SAN para `mi-nas-vaz.myqnapcloud.com` y `*.mi-nas-vaz.myqnapcloud.com` (wildcard).
+- DNS:
+  - Si usas el dominio QNAP tal cual, no hay que crear registros (ya apunta al NAS). Solo asegura el port forwarding 61180→61180 y 61443→61443 hacia el NAS.
+  - Si quieres un dominio propio, crea CNAMEs que apunten a `mi-nas-vaz.myqnapcloud.com`:
+    - `miapp.tudominio.com -> mi-nas-vaz.myqnapcloud.com`
+    - `sistema.tudominio.com -> mi-nas-vaz.myqnapcloud.com`
+    y renombra los hosts en `ingress/global-ingress.yaml` acorde.
+
+### Flujo mínimo para que se vea desde afuera
+1. Ingress Controller arriba (`kubectl -n ingress-nginx get pods`).
+2. Forwarding/UPnP en router/NAS de 61180 y 61443 hacia el NAS.
+3. DNS apuntando al dominio del NAS (o CNAME).
+4. TLS secreto creado: `kubectl create secret tls wildcard-mydominio-tls ... -n default` (o vía cert-manager).
+
+## Página temporal de mantenimiento
+
+HTML separado en `ingress/maintenance/index.html` (no incrustado en YAML).
+
+1. Construye y aplica con Kustomize (configMap desde el HTML):
+   ```bash
+   kubectl apply -k ingress/maintenance
+   ```
+   Esto crea:
+   - ConfigMap `maintenance-page` desde `index.html` (sin hash de nombre).
+   - Deployment `maintenance-page` (nginx).
+   - Service `maintenance-service`.
+2. Aplica el Ingress:
+   ```bash
+   kubectl apply -f ingress/global-ingress.yaml
+   ```
+   (Ya apunta a `maintenance-service` en los hosts principales y catch-all).
+3. Cuando las apps estén listas:
+   - Cambia en `ingress/global-ingress.yaml` los `service.name` a:
+     - `mi-nas-vaz.myqnapcloud.com` -> `indumentaria-service`
+     - `sistema.mi-nas-vaz.myqnapcloud.com` -> `saas-service`
+     - catch-all -> lo que quieras por defecto (ej. `indumentaria-service`)
+   - Vuelve a aplicar: `kubectl apply -f ingress/global-ingress.yaml`
+
 ## Paso 1: Configurar Secretos (Primera vez)
 
 Ver el archivo `secrets-templates/db-credentials.txt`. Ejecutar esos

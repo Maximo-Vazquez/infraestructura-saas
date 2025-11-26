@@ -11,26 +11,42 @@ spec:
   ingressClassName: nginx  # Debe coincidir con la IngressClass del Nginx Ingress Controller instalado
   tls:
     - hosts:
-        - "*.midominio.com"  # Certificado wildcard para todos los subdominios y el host especifico
-      secretName: wildcard-mydominio-tls  # Debe existir; puedes generarlo o que cert-manager lo administre
+        - mi-nas-vaz.myqnapcloud.com           # Host base expuesto por QNAP
+        - "*.mi-nas-vaz.myqnapcloud.com"       # Wildcard para subdominios
+      secretName: wildcard-mydominio-tls       # Debe existir; puedes generarlo o que cert-manager lo administre
   rules:
-    - host: "*.midominio.com"  # Cubre cualquier subdominio y envia a la app de indumentaria
+    # --- REGLA BASE: dominio principal QNAP -> indumentaria ---
+    - host: mi-nas-vaz.myqnapcloud.com         # Sin wildcard; Ingress no admite * en spec.rules.host
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: indumentaria-service  # Service de indumentaria (escucha en el puerto 80)
+                name: maintenance-service     # Temporal: página de espera. Cambia a indumentaria-service cuando esté lista la app.
                 port:
                   number: 80
-    - host: sistema.midominio.com  # Host fijo que envia al otro software
+
+    # --- REGLA ESPECIFICA: subdominio fijo para el SaaS ---
+    - host: sistema.mi-nas-vaz.myqnapcloud.com
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: saas-service  # Service del otro software (puerto 80)
+                name: maintenance-service     # Temporal: página de espera. Cambia a saas-service cuando esté lista la app.
+                port:
+                  number: 80
+
+    # --- REGLA CATCH-ALL: cualquier otro host/subdominio -> indumentaria ---
+    # Deja host vacío para que Nginx capture cualquier Host header y lo envíe a la página de espera.
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: maintenance-service
                 port:
                   number: 80

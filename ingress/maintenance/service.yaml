@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: maintenance-service
+  namespace: default
+  labels:
+    app: maintenance-page
+spec:
+  selector:
+    app: maintenance-page
+  ports:
+    - port: 80
+      targetPort: 80

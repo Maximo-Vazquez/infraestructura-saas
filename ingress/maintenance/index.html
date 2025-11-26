@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Estamos preparando todo</title>
+  <style>
+    :root {
+      --bg: radial-gradient(120% 120% at 10% 20%, #0f172a 0%, #0b1224 45%, #050915 100%);
+      --card: rgba(255, 255, 255, 0.06);
+      --stroke: rgba(255, 255, 255, 0.12);
+      --glow: 0 20px 60px rgba(59, 130, 246, 0.2);
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-2: #8b5cf6;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+    .shell {
+      width: min(960px, 100%);
+      border: 1px solid var(--stroke);
+      border-radius: 20px;
+      background: linear-gradient(145deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+      box-shadow: var(--glow);
+      overflow: hidden;
+      position: relative;
+    }
+    .glow {
+      position: absolute;
+      inset: -40% auto auto -30%;
+      width: 60%;
+      aspect-ratio: 1;
+      background: radial-gradient(circle, rgba(56,189,248,0.25), rgba(56,189,248,0) 65%);
+      filter: blur(8px);
+      pointer-events: none;
+    }
+    header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--stroke);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 0 6px rgba(34, 197, 94, 0.15);
+    }
+    .title {
+      font-weight: 700;
+      letter-spacing: 0.4px;
+    }
+    main {
+      padding: 32px 24px 28px;
+      display: grid;
+      gap: 20px;
+    }
+    .hero {
+      display: grid;
+      gap: 10px;
+    }
+    .hero h1 {
+      margin: 0;
+      font-size: clamp(28px, 4vw, 36px);
+      letter-spacing: -0.5px;
+    }
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 16px;
+      max-width: 720px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--stroke);
+      border-radius: 14px;
+      padding: 16px;
+      display: grid;
+      gap: 8px;
+    }
+    .card h3 { margin: 0; font-size: 16px; }
+    .card p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.5; }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: linear-gradient(90deg, rgba(56,189,248,0.12), rgba(139,92,246,0.12));
+      border: 1px solid rgba(255,255,255,0.08);
+      color: #e0f2fe;
+      font-weight: 600;
+      width: fit-content;
+    }
+    .footer {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid var(--stroke);
+      padding-top: 16px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    @media (max-width: 600px) {
+      body { padding: 16px; }
+      header { padding: 16px; }
+      main { padding: 22px 16px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="glow"></div>
+    <header>
+      <div class="dot"></div>
+      <div class="title">Infraestructura en progreso</div>
+    </header>
+    <main>
+      <div class="hero">
+        <div class="pill">🚀 En breve estará listo</div>
+        <h1>Estamos preparando el entorno</h1>
+        <p>Tu NAS está levantando los servicios. Mientras tanto, dejamos esta página de espera con el estado general y lo que viene.</p>
+      </div>
+      <div class="grid">
+        <div class="card">
+          <h3>Publicación segura</h3>
+          <p>Configuramos el ingreso HTTPS y redirecciones para que la salida sea segura cuando las apps estén listas.</p>
+        </div>
+        <div class="card">
+          <h3>DNS y certificados</h3>
+          <p>El dominio y el certificado wildcard se están aplicando para `mi-nas-vaz.myqnapcloud.com` y subdominios.</p>
+        </div>
+        <div class="card">
+          <h3>Servicios en despliegue</h3>
+          <p>Los contenedores de aplicación se inicializarán pronto. Al completarse, esta página redirigirá al sitio final.</p>
+        </div>
+      </div>
+      <div class="footer">
+        <span>NAS QNAP • Kubernetes + Nginx Ingress</span>
+        <span>Actualiza en breve para ver los servicios en línea</span>
+      </div>
+    </main>
+  </div>
+</body>
+</html>
