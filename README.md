@@ -64,6 +64,16 @@ HTML separado en `ingress/maintenance/index.html` (no incrustado en YAML).
      - catch-all -> lo que quieras por defecto (ej. `indumentaria-service`)
    - Vuelve a aplicar: `kubectl apply -f ingress/global-ingress.yaml`
 
+## Automatización del flujo completo (GitHub Actions)
+
+- Workflow manual `Deploy Infra Completa (Controller + Maintenance + Ingress)`:
+  - Copia la carpeta `ingress/` al NAS.
+  - Instala/actualiza el controller (`ingress/ingress-controller.yaml`).
+  - Aplica la página de mantenimiento (`kubectl apply -k ingress/maintenance`).
+  - Aplica el Ingress con backend seleccionado:
+    - `backend_mode: maintenance` (por defecto) usa `ingress/global-ingress.yaml` (muestra la página temporal).
+    - `backend_mode: apps` usa `ingress/global-ingress-apps.yaml` (requiere `indumentaria-service` y `saas-service` creados).
+
 ## Paso 1: Configurar Secretos (Primera vez)
 
 Ver el archivo `secrets-templates/db-credentials.txt`. Ejecutar esos

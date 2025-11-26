@@ -1,0 +1,66 @@
+name: Deploy Infra Completa (Controller + Maintenance + Ingress)
+
+on:
+  workflow_dispatch:
+    inputs:
+      backend_mode:
+        description: "Selecciona backend: maintenance (placeholder) o apps (indumentaria/saas)"
+        required: true
+        default: "maintenance"
+        type: choice
+        options:
+          - maintenance
+          - apps
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del codigo
+        uses: actions/checkout@v4
+
+      - name: Copiar configuraciones al NAS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.NAS_HOST }}
+          username: ${{ secrets.NAS_USER }}
+          key: ${{ secrets.NAS_SSH_KEY }}
+          port: ${{ secrets.NAS_PORT }}
+          source: "ingress/**"
+          target: "/share/homes/${{ secrets.NAS_USER }}/deployments/ingress-global"
+
+      - name: Desplegar flujo completo en el NAS
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.NAS_HOST }}
+          username: ${{ secrets.NAS_USER }}
+          key: ${{ secrets.NAS_SSH_KEY }}
+          port: ${{ secrets.NAS_PORT }}
+          script: |
+            set -euo pipefail
+            echo "Desplegando infraestructura completa..."
+            export PATH=$PATH:/usr/local/bin:/share/CACHEDEV1_DATA/.qpkg/container-station/bin:/share/ZFS530_DATA/.qpkg/container-station/bin
+            export KUBECONFIG=${KUBECONFIG:-/etc/rancher/k3s/k3s.yaml}
+
+            cd /share/homes/${{ secrets.NAS_USER }}/deployments/ingress-global
+            mkdir -p /share/homes/${{ secrets.NAS_USER }}/deployments/ingress-global
+
+            # 1) Ingress Controller (NodePort)
+            kubectl apply -f ingress/ingress-controller.yaml
+
+            # 2) Página de mantenimiento (placeholder) siempre disponible
+            kubectl apply -k ingress/maintenance
+
+            # 3) Seleccionar backend para las reglas del Ingress
+            BACKEND_MODE="${{ inputs.backend_mode }}"
+            if [ "$BACKEND_MODE" = "apps" ]; then
+              INGRESS_FILE="ingress/global-ingress-apps.yaml"
+              echo "Usando backends reales (apps). Asegúrate de que los Services existan."
+            else
+              INGRESS_FILE="ingress/global-ingress.yaml"
+              echo "Usando página de mantenimiento como backend."
+            fi
+
+            kubectl apply -f "$INGRESS_FILE"
+            kubectl get ingress ingress-principal -o wide
+            echo "Despliegue finalizado con modo backend: $BACKEND_MODE"
