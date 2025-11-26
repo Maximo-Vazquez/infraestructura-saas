@@ -40,7 +40,7 @@ jobs:
             set -euo pipefail
             echo "Desplegando infraestructura completa..."
             export PATH=$PATH:/usr/local/bin:/share/CACHEDEV1_DATA/.qpkg/container-station/bin:/share/ZFS530_DATA/.qpkg/container-station/bin
-            export KUBECONFIG=${KUBECONFIG:-/etc/rancher/k3s/k3s.yaml}
+            export KUBECONFIG=${KUBECONFIG:-/share/homes/${{ secrets.NAS_USER }}/.kube/config}
 
             cd /share/homes/${{ secrets.NAS_USER }}/deployments/ingress-global
             mkdir -p /share/homes/${{ secrets.NAS_USER }}/deployments/ingress-global

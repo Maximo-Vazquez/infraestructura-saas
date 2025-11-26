@@ -30,7 +30,7 @@ jobs:
           script: |
             echo "Desplegando Nginx Ingress Controller (NodePort) en el NAS..."
             export PATH=$PATH:/usr/local/bin:/share/CACHEDEV1_DATA/.qpkg/container-station/bin:/share/ZFS530_DATA/.qpkg/container-station/bin
-            export KUBECONFIG=${KUBECONFIG:-/etc/rancher/k3s/k3s.yaml}
+            export KUBECONFIG=${KUBECONFIG:-/share/homes/${{ secrets.NAS_USER }}/.kube/config}
             kubectl apply -f /tmp/ingress-controller.yaml
             kubectl -n ingress-nginx get pods,svc
             kubectl get ingressclass
