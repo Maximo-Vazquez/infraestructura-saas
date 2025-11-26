@@ -26,7 +26,7 @@ Recuerda abrir/forwardear en el NAS/Router los puertos 61180 (HTTP) y 61443 (HTT
 - Host de entrada: `mi-nas-vaz.myqnapcloud.com` (QNAP). El Ingress está configurado para ese host y cualquier subdominio.
 - Página temporal: todas las rutas apuntan a `maintenance-service` hasta que las apps estén listas (ver más abajo cómo cambiarlo).
 - SaaS: usa `sistema.mi-nas-vaz.myqnapcloud.com` (también temporalmente apunta a maintenance).
-- TLS: el secreto `wildcard-mydominio-tls` debe contener CN/SAN para `mi-nas-vaz.myqnapcloud.com` y `*.mi-nas-vaz.myqnapcloud.com` (wildcard).
+- TLS: cert-manager emite el secreto `wildcard-mydominio-tls` (Let's Encrypt HTTP-01) para `mi-nas-vaz.myqnapcloud.com` y `sistema.mi-nas-vaz.myqnapcloud.com`. Edita el email en `ingress/cert-manager.yaml` y aplica ese manifiesto.
 - DNS:
   - Si usas el dominio QNAP tal cual, no hay que crear registros (ya apunta al NAS). Solo asegura el port forwarding 61180→61180 y 61443→61443 hacia el NAS.
   - Si quieres un dominio propio, crea CNAMEs que apunten a `mi-nas-vaz.myqnapcloud.com`:
@@ -38,7 +38,7 @@ Recuerda abrir/forwardear en el NAS/Router los puertos 61180 (HTTP) y 61443 (HTT
 1. Ingress Controller arriba (`kubectl -n ingress-nginx get pods`).
 2. Forwarding/UPnP en router/NAS de 61180 y 61443 hacia el NAS.
 3. DNS apuntando al dominio del NAS (o CNAME).
-4. TLS secreto creado: `kubectl create secret tls wildcard-mydominio-tls ... -n default` (o vía cert-manager).
+4. TLS automatizado: instala cert-manager (`kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.15.3/cert-manager.yaml`), edita el email en `ingress/cert-manager.yaml` y aplica: `kubectl apply -f ingress/cert-manager.yaml`.
 
 ## Página temporal de mantenimiento
 
@@ -69,6 +69,7 @@ HTML separado en `ingress/maintenance/index.html` (no incrustado en YAML).
 - Workflow manual `Deploy Infra Completa (Controller + Maintenance + Ingress)`:
   - Copia la carpeta `ingress/` al NAS.
   - Instala/actualiza el controller (`ingress/ingress-controller.yaml`).
+  - Instala/actualiza cert-manager y aplica el certificado/issuer (`ingress/cert-manager.yaml`).
   - Aplica la página de mantenimiento (`kubectl apply -k ingress/maintenance`).
   - Aplica el Ingress con backend seleccionado:
     - `backend_mode: maintenance` (por defecto) usa `ingress/global-ingress.yaml` (muestra la página temporal).

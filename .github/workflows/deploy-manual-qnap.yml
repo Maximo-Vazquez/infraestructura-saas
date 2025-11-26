@@ -17,7 +17,7 @@ jobs:
           username: ${{ secrets.NAS_USER }}
           key: ${{ secrets.NAS_SSH_KEY }}
           port: ${{ secrets.NAS_PORT }}
-          source: "ingress/*"
+          source: "ingress/**"
           target: "/share/homes/${{ secrets.NAS_USER }}/deployments/ingress-global"
 
       - name: Aplicar ingress en el NAS
@@ -32,6 +32,11 @@ jobs:
             export PATH=$PATH:/usr/local/bin:/share/CACHEDEV1_DATA/.qpkg/container-station/bin:/share/ZFS530_DATA/.qpkg/container-station/bin
             export KUBECONFIG=${KUBECONFIG:-/share/homes/${{ secrets.NAS_USER }}/.kube/config}
             cd /share/homes/${{ secrets.NAS_USER }}/deployments/ingress-global
+            CERT_MANAGER_VERSION="${CERT_MANAGER_VERSION:-v1.15.3}"
+            kubectl apply -f "https://github.com/cert-manager/cert-manager/releases/download/${CERT_MANAGER_VERSION}/cert-manager.yaml"
+            kubectl -n cert-manager wait --for=condition=Available deployment --all --timeout=180s
+            kubectl apply -f ingress/cert-manager.yaml
+            kubectl -n default get certificate mi-nas-vaz-cert
             kubectl apply -f ingress/global-ingress.yaml
             kubectl get ingress ingress-principal -o wide
             echo "Despliegue finalizado con exito."

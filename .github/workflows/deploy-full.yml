@@ -44,6 +44,10 @@ jobs:
 
             cd /share/homes/${{ secrets.NAS_USER }}/deployments/ingress-global
             mkdir -p /share/homes/${{ secrets.NAS_USER }}/deployments/ingress-global
+            # 0) cert-manager (Let's Encrypt HTTP-01)
+            CERT_MANAGER_VERSION="${CERT_MANAGER_VERSION:-v1.15.3}"
+            kubectl apply -f "https://github.com/cert-manager/cert-manager/releases/download/${CERT_MANAGER_VERSION}/cert-manager.yaml"
+            kubectl -n cert-manager wait --for=condition=Available deployment --all --timeout=180s
             # Limpieza previa para evitar conflictos de NodePort/selector inmutable
             kubectl -n ingress-nginx delete service ingress-nginx-controller --ignore-not-found
             kubectl -n ingress-nginx delete deployment ingress-nginx-controller --ignore-not-found
@@ -51,10 +55,14 @@ jobs:
             # 1) Ingress Controller (NodePort)
             kubectl apply -f ingress/ingress-controller.yaml
 
-            # 2) Página de mantenimiento (placeholder) siempre disponible
+            # 2) Recursos de cert-manager (Issuer + Certificate)
+            kubectl apply -f ingress/cert-manager.yaml
+            kubectl -n default get certificate mi-nas-vaz-cert
+
+            # 3) Pagina de mantenimiento (placeholder) siempre disponible
             kubectl apply -k ingress/maintenance
 
-            # 3) Seleccionar backend para las reglas del Ingress
+            # 4) Seleccionar backend para las reglas del Ingress
             BACKEND_MODE="${{ inputs.backend_mode }}"
             if [ "$BACKEND_MODE" = "apps" ]; then
               INGRESS_FILE="ingress/global-ingress-apps.yaml"
