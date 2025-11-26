@@ -31,6 +31,9 @@ jobs:
             echo "Desplegando Nginx Ingress Controller (NodePort) en el NAS..."
             export PATH=$PATH:/usr/local/bin:/share/CACHEDEV1_DATA/.qpkg/container-station/bin:/share/ZFS530_DATA/.qpkg/container-station/bin
             export KUBECONFIG=${KUBECONFIG:-/share/homes/${{ secrets.NAS_USER }}/.kube/config}
+            # Limpieza previa para evitar conflictos de NodePort/selector inmutable
+            kubectl -n ingress-nginx delete service ingress-nginx-controller --ignore-not-found
+            kubectl -n ingress-nginx delete deployment ingress-nginx-controller --ignore-not-found
             kubectl apply -f /tmp/ingress-controller.yaml
             kubectl -n ingress-nginx get pods,svc
             kubectl get ingressclass

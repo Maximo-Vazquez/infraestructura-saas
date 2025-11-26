@@ -44,6 +44,9 @@ jobs:
 
             cd /share/homes/${{ secrets.NAS_USER }}/deployments/ingress-global
             mkdir -p /share/homes/${{ secrets.NAS_USER }}/deployments/ingress-global
+            # Limpieza previa para evitar conflictos de NodePort/selector inmutable
+            kubectl -n ingress-nginx delete service ingress-nginx-controller --ignore-not-found
+            kubectl -n ingress-nginx delete deployment ingress-nginx-controller --ignore-not-found
 
             # 1) Ingress Controller (NodePort)
             kubectl apply -f ingress/ingress-controller.yaml
