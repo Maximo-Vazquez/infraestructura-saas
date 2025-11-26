@@ -1,15 +1,15 @@
-name: Deploy Infra Completa (Controller + Maintenance + Ingress)
+name: Despliegue Infra Completa (Controlador + Mantenimiento + Ingress)
 
 on:
   workflow_dispatch:
     inputs:
       backend_mode:
-        description: "Selecciona backend: maintenance (placeholder) o apps (indumentaria/saas)"
+        description: "Selecciona backend: mantenimiento (landing) o apps (indumentaria/saas)"
         required: true
-        default: "maintenance"
+        default: "mantenimiento"
         type: choice
         options:
-          - maintenance
+          - mantenimiento
           - apps
 
 jobs:
@@ -58,10 +58,10 @@ jobs:
             BACKEND_MODE="${{ inputs.backend_mode }}"
             if [ "$BACKEND_MODE" = "apps" ]; then
               INGRESS_FILE="ingress/global-ingress-apps.yaml"
-              echo "Usando backends reales (apps). Asegúrate de que los Services existan."
+              echo "Usando backends reales (apps). Asegurate de que los Services existan."
             else
               INGRESS_FILE="ingress/global-ingress.yaml"
-              echo "Usando página de mantenimiento como backend."
+              echo "Usando pagina de mantenimiento como backend."
             fi
 
             kubectl apply -f "$INGRESS_FILE"

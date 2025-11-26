@@ -16,9 +16,11 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: indumentaria-service
+                name: saas-service
                 port:
                   number: 80
+
+                  
     - host: sistema.mycloudnas.com
       http:
         paths:
@@ -26,7 +28,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: saas-service
+                name: indumentaria-service
                 port:
                   number: 80
     - http:
