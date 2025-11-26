@@ -1,163 +1,200 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Estamos preparando todo</title>
-  <style>
-    :root {
-      --bg: radial-gradient(120% 120% at 10% 20%, #0f172a 0%, #0b1224 45%, #050915 100%);
-      --card: rgba(255, 255, 255, 0.06);
-      --stroke: rgba(255, 255, 255, 0.12);
-      --glow: 0 20px 60px rgba(59, 130, 246, 0.2);
-      --text: #e2e8f0;
-      --muted: #94a3b8;
-      --accent: #38bdf8;
-      --accent-2: #8b5cf6;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      display: grid;
-      place-items: center;
-      padding: 24px;
-    }
-    .shell {
-      width: min(960px, 100%);
-      border: 1px solid var(--stroke);
-      border-radius: 20px;
-      background: linear-gradient(145deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
-      box-shadow: var(--glow);
-      overflow: hidden;
-      position: relative;
-    }
-    .glow {
-      position: absolute;
-      inset: -40% auto auto -30%;
-      width: 60%;
-      aspect-ratio: 1;
-      background: radial-gradient(circle, rgba(56,189,248,0.25), rgba(56,189,248,0) 65%);
-      filter: blur(8px);
-      pointer-events: none;
-    }
-    header {
-      padding: 20px 24px;
-      border-bottom: 1px solid var(--stroke);
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .dot {
-      width: 10px; height: 10px;
-      border-radius: 50%;
-      background: #22c55e;
-      box-shadow: 0 0 0 6px rgba(34, 197, 94, 0.15);
-    }
-    .title {
-      font-weight: 700;
-      letter-spacing: 0.4px;
-    }
-    main {
-      padding: 32px 24px 28px;
-      display: grid;
-      gap: 20px;
-    }
-    .hero {
-      display: grid;
-      gap: 10px;
-    }
-    .hero h1 {
-      margin: 0;
-      font-size: clamp(28px, 4vw, 36px);
-      letter-spacing: -0.5px;
-    }
-    .hero p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 16px;
-      max-width: 720px;
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 16px;
-    }
-    .card {
-      background: var(--card);
-      border: 1px solid var(--stroke);
-      border-radius: 14px;
-      padding: 16px;
-      display: grid;
-      gap: 8px;
-    }
-    .card h3 { margin: 0; font-size: 16px; }
-    .card p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.5; }
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 12px;
-      border-radius: 12px;
-      background: linear-gradient(90deg, rgba(56,189,248,0.12), rgba(139,92,246,0.12));
-      border: 1px solid rgba(255,255,255,0.08);
-      color: #e0f2fe;
-      font-weight: 600;
-      width: fit-content;
-    }
-    .footer {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      align-items: center;
-      justify-content: space-between;
-      border-top: 1px solid var(--stroke);
-      padding-top: 16px;
-      color: var(--muted);
-      font-size: 14px;
-    }
-    @media (max-width: 600px) {
-      body { padding: 16px; }
-      header { padding: 16px; }
-      main { padding: 22px 16px; }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sitio en Mantenimiento | MF Software</title>
+    <style>
+        /* --- Reset y Estilos Base --- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            /* Azul vibrante basado en tu marca (Indigo/Blue) */
+            background: linear-gradient(135deg, #4361ee 0%, #3a4bcf 100%);
+            color: #ffffff;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* --- Elementos de fondo (Círculos difusos como en tu web) --- */
+        .bg-blob {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            filter: blur(40px);
+            z-index: 0;
+        }
+        .blob-1 { width: 400px; height: 400px; top: -100px; left: -100px; }
+        .blob-2 { width: 300px; height: 300px; bottom: 50px; right: -50px; background: rgba(255, 255, 255, 0.08); }
+        .blob-3 { width: 150px; height: 150px; top: 20%; right: 20%; background: rgba(255, 255, 255, 0.03); }
+
+        /* --- Contenedor Principal --- */
+        .container {
+            text-align: center;
+            position: relative;
+            z-index: 10;
+            max-width: 700px;
+            padding: 2rem;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        /* --- Logo Simulado (MF Software) --- */
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 3rem;
+        }
+
+        .logo-img {
+            width: 55px; /* Tamaño ajustado para que se vea bien */
+            height: 55px;
+            border-radius: 50%;
+            border: 2px solid white; /* Borde blanco para resaltar sobre el azul */
+            object-fit: cover;
+            background: white; /* Fondo blanco por si la imagen tiene transparencia */
+        }
+
+        .logo-text {
+            font-size: 1.4rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        /* --- Icono Central --- */
+        .icon-wrapper {
+            margin-bottom: 2rem;
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 50%;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .gear-icon {
+            width: 60px;
+            height: 60px;
+            fill: #ffffff;
+            animation: spin 10s linear infinite;
+        }
+
+        /* --- Tipografía --- */
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 1.2rem;
+            font-weight: 700;
+            line-height: 1.1;
+        }
+
+        p {
+            font-size: 1.15rem;
+            color: rgba(255, 255, 255, 0.9);
+            line-height: 1.6;
+            margin-bottom: 3rem;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* --- Botón Estilo Marca (Pastilla Blanca) --- */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 32px;
+            background: #ffffff;
+            color: #4361ee; /* Mismo azul que el fondo */
+            text-decoration: none;
+            border-radius: 50px; /* Bordes totalmente redondos */
+            font-weight: 700;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            background: #f8f9fa;
+        }
+        
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        /* --- Footer --- */
+        .footer {
+            margin-top: 4rem;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* --- Animaciones --- */
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- Responsive --- */
+        @media (max-width: 600px) {
+            h1 { font-size: 2.2rem; }
+            p { font-size: 1rem; }
+            .blob-1 { width: 200px; height: 200px; }
+        }
+    </style>
 </head>
 <body>
-  <div class="shell">
-    <div class="glow"></div>
-    <header>
-      <div class="dot"></div>
-      <div class="title">Infraestructura en progreso</div>
-    </header>
-    <main>
-      <div class="hero">
-        <div class="pill">🚀 En breve estará listo</div>
-        <h1>Estamos preparando el entorno</h1>
-        <p>Tu NAS está levantando los servicios. Mientras tanto, dejamos esta página de espera con el estado general y lo que viene.</p>
-      </div>
-      <div class="grid">
-        <div class="card">
-          <h3>Publicación segura</h3>
-          <p>Configuramos el ingreso HTTPS y redirecciones para que la salida sea segura cuando las apps estén listas.</p>
+
+    <!-- Fondos decorativos estilo "Blob" -->
+    <div class="bg-blob blob-1"></div>
+    <div class="bg-blob blob-2"></div>
+    <div class="bg-blob blob-3"></div>
+
+    <div class="container">
+        <!-- Logo Header -->
+        <div class="brand-logo">
+            <!-- AQUÍ ESTÁ EL CAMBIO: Imagen del logo -->
+            <img src="logo.png" alt="MF Logo" class="logo-img">
+            <div class="logo-text">Software</div>
         </div>
-        <div class="card">
-          <h3>DNS y certificados</h3>
-          <p>El dominio y el certificado TLS se gestionan en el proxy inverso del NAS para `mi-nas-vaz.myqnapcloud.com` y `sistema.mycloudnas.com`.</p>
+
+        <!-- Icono -->
+        <div class="icon-wrapper">
+            <svg class="gear-icon" viewBox="0 0 24 24">
+                <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
+            </svg>
         </div>
-        <div class="card">
-          <h3>Servicios en despliegue</h3>
-          <p>Los contenedores de aplicación se inicializarán pronto. Al completarse, esta página redirigirá al sitio final.</p>
+
+        <h1>Mantenimiento</h1>
+        <p>Estamos realizando mejoras en nuestra plataforma. El servicio volverá a estar operativo en breve.</p>
+
+        <button class="btn" onclick="location.reload()">
+            Recargar sitio
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                <path d="M3 3v5h5"/>
+                <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+                <path d="M16 21h5v-5"/>
+            </svg>
+        </button>
+        
+        <div class="footer">
+            &copy; 2025 MF Software. Todos los derechos reservados.
         </div>
-      </div>
-      <div class="footer">
-        <span>NAS QNAP • Kubernetes + Nginx Ingress</span>
-        <span>Actualiza en breve para ver los servicios en línea</span>
-      </div>
-    </main>
-  </div>
+    </div>
 </body>
 </html>

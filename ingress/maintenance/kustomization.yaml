@@ -8,5 +8,6 @@ configMapGenerator:
   - name: maintenance-page
     files:
       - index.html
+      - logo.png
     options:
       disableNameSuffixHash: true  # Nombre estable para montarlo en el deployment
