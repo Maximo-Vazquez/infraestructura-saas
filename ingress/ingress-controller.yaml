@@ -189,11 +189,20 @@ spec:
             runAsNonRoot: true
             runAsUser: 101
             readOnlyRootFilesystem: true
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - "mkdir -p /tmp/nginx /etc/ingress-controller/ssl /var/run/nginx"
           volumeMounts:
             - name: ssl-certs
               mountPath: /etc/ingress-controller/ssl
             - name: tmp
               mountPath: /tmp
+            - name: var-run
+              mountPath: /var/run
           ports:
             - name: http
               containerPort: 80
@@ -233,4 +242,6 @@ spec:
         - name: ssl-certs
           emptyDir: {}
         - name: tmp
+          emptyDir: {}
+        - name: var-run
           emptyDir: {}
