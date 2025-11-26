@@ -189,6 +189,11 @@ spec:
             runAsNonRoot: true
             runAsUser: 101
             readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: ssl-certs
+              mountPath: /etc/ingress-controller/ssl
+            - name: tmp
+              mountPath: /tmp
           ports:
             - name: http
               containerPort: 80
@@ -224,3 +229,8 @@ spec:
             limits:
               cpu: 500m
               memory: 512Mi
+      volumes:
+        - name: ssl-certs
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
