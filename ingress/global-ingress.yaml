@@ -5,15 +5,9 @@ metadata:
   namespace: default  # Cambia si usas otro namespace para los servicios
   annotations:
     nginx.ingress.kubernetes.io/proxy-body-size: "10m"  # Permite uploads de hasta 10MB
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"    # Redirige HTTP->HTTPS cuando el secreto TLS existe
-    cert-manager.io/cluster-issuer: letsencrypt-http
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"   # El proxy inverso ya termina TLS; el Ingress recibe HTTP
 spec:
   ingressClassName: nginx  # Debe coincidir con la IngressClass del Nginx Ingress Controller instalado
-  tls:
-    - hosts:
-        - mi-nas-vaz.myqnapcloud.com           # Host base expuesto por QNAP
-        - sistema.mycloudnas.com               # Subdominio fijo para SaaS
-      secretName: wildcard-mydominio-tls       # Lo rellena cert-manager (Let's Encrypt)
   rules:
     # --- REGLA BASE: dominio principal QNAP -> indumentaria ---
     - host: mi-nas-vaz.myqnapcloud.com         # Sin wildcard; Ingress no admite * en spec.rules.host

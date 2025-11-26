@@ -6,7 +6,7 @@ Pasos ordenados para levantar el Ingress, la página de mantenimiento y luego la
 - k3s/Kubernetes funcionando y `kubectl` accesible (usa `/etc/rancher/k3s/k3s.yaml` si es k3s).
 - Puertos abiertos/forwardeados en el NAS o router: `61180` (HTTP) y `61443` (HTTPS) hacia el host del NAS.
 - Dominio de entrada: `mi-nas-vaz.myqnapcloud.com` (o CNAMEs que apunten allí).
-- Certificado TLS emitido por cert-manager (Let's Encrypt HTTP-01) en el Secret `wildcard-mydominio-tls` para `mi-nas-vaz.myqnapcloud.com` y `sistema.mycloudnas.com`. Instala cert-manager (`kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.15.3/cert-manager.yaml`), edita el email en `ingress/cert-manager.yaml` y aplica ese archivo.
+- TLS se termina en el proxy inverso/QNAP usando su certificado válido. El Ingress recibe HTTP en 61180/61443 desde el proxy.
 
 ## 1. Instalar el Nginx Ingress Controller (una sola vez o cuando lo actualices)
 Opción manual:
@@ -34,11 +34,11 @@ kubectl get ingress ingress-principal -o wide
 ```
 
 ## 4. Verificación inicial
-- Probar `http(s)://mi-nas-vaz.myqnapcloud.com` y `sistema.mycloudnas.com`: debe verse la página de mantenimiento.
+- Probar `http(s)://mi-nas-vaz.myqnapcloud.com` y `sistema.mycloudnas.com`: debe verse la página de mantenimiento (el candado lo entrega el proxy inverso).
 - Si ves 503:
   - Asegura que `maintenance-service` y su Deployment estén Ready.
   - Confirma que el controller está arriba: `kubectl -n ingress-nginx get pods`.
-- Si ves certificado no confiable: revisa `kubectl describe certificate mi-nas-vaz-cert -n default` y que el Secret `wildcard-mydominio-tls` exista (aplica `ingress/cert-manager.yaml` si falta).
+- Si ves certificado no confiable: revisa el proxy inverso/QNAP y el certificado configurado allí (el Ingress no gestiona TLS).
 
 ## 5. DNS
 - Usando el dominio QNAP: ya apunta al NAS; solo asegúrate del port forwarding.
@@ -65,8 +65,7 @@ Cuando `indumentaria-service` y `saas-service` estén desplegados en el mismo na
 - Mantén el controller activo; solo actualízalo cuando quieras subir versión.
 
 ## 8. Flujo resumido (un comando por etapa)
-1. cert-manager + certificado: `kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.15.3/cert-manager.yaml && kubectl apply -f ingress/cert-manager.yaml`
-2. Controller: `kubectl apply -f ingress/ingress-controller.yaml`
-3. Placeholder: `kubectl apply -k ingress/maintenance`
-4. Ingress: `kubectl apply -f ingress/global-ingress.yaml`
-5. Swap a apps: editar services en el Ingress y volver a aplicar.
+1. Controller: `kubectl apply -f ingress/ingress-controller.yaml`
+2. Placeholder: `kubectl apply -k ingress/maintenance`
+3. Ingress: `kubectl apply -f ingress/global-ingress.yaml`
+4. Swap a apps: editar services en el Ingress y volver a aplicar.
