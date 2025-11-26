@@ -195,7 +195,7 @@ spec:
                 command:
                   - /bin/sh
                   - -c
-                  - "mkdir -p /tmp/nginx /etc/ingress-controller/ssl /var/run/nginx"
+                  - "mkdir -p /tmp/nginx /etc/ingress-controller/ssl /var/run/nginx /etc/ingress-controller/telemetry"
           volumeMounts:
             - name: ssl-certs
               mountPath: /etc/ingress-controller/ssl
@@ -203,6 +203,8 @@ spec:
               mountPath: /tmp
             - name: var-run
               mountPath: /var/run
+            - name: telemetry
+              mountPath: /etc/ingress-controller/telemetry
           ports:
             - name: http
               containerPort: 80
@@ -244,4 +246,6 @@ spec:
         - name: tmp
           emptyDir: {}
         - name: var-run
+          emptyDir: {}
+        - name: telemetry
           emptyDir: {}
