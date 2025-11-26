@@ -8,6 +8,19 @@ del cluster.
 1.  Tener **k3s** o Kubernetes instalado.
 2.  Tener **Nginx Ingress Controller** habilitado.
 
+## Paso 0: Instalar Nginx Ingress Controller (una sola vez)
+
+El controlador se despliega con NodePort (puertos 61180/61443 que permite QNAP). Opciones:
+
+1. Manual en el NAS:
+    ```bash
+    kubectl apply -f ingress/ingress-controller.yaml
+    kubectl -n ingress-nginx get pods,svc
+    ```
+2. Boton GitHub Actions: ejecuta el workflow **Bootstrap Nginx Ingress Controller** (workflow_dispatch). Usa las mismas credenciales NAS que el deploy manual.
+
+Recuerda abrir/forwardear en el NAS/Router los puertos 61180 (HTTP) y 61443 (HTTPS) hacia afuera si quieres exponer servicios publicamente.
+
 ## Paso 1: Configurar Secretos (Primera vez)
 
 Ver el archivo `secrets-templates/db-credentials.txt`. Ejecutar esos

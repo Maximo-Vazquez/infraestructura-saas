@@ -1,0 +1,37 @@
+name: Bootstrap Nginx Ingress Controller
+
+on:
+  workflow_dispatch:
+
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del codigo
+        uses: actions/checkout@v4
+
+      - name: Copiar manifiesto del controlador al NAS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.NAS_HOST }}
+          username: ${{ secrets.NAS_USER }}
+          key: ${{ secrets.NAS_SSH_KEY }}
+          port: ${{ secrets.NAS_PORT }}
+          source: "ingress/ingress-controller.yaml"
+          target: "/tmp"
+
+      - name: Instalar/actualizar Nginx Ingress Controller en el NAS
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.NAS_HOST }}
+          username: ${{ secrets.NAS_USER }}
+          key: ${{ secrets.NAS_SSH_KEY }}
+          port: ${{ secrets.NAS_PORT }}
+          script: |
+            echo "Desplegando Nginx Ingress Controller (NodePort) en el NAS..."
+            export PATH=$PATH:/usr/local/bin:/share/CACHEDEV1_DATA/.qpkg/container-station/bin:/share/ZFS530_DATA/.qpkg/container-station/bin
+            export KUBECONFIG=${KUBECONFIG:-/etc/rancher/k3s/k3s.yaml}
+            kubectl apply -f /tmp/ingress-controller.yaml
+            kubectl -n ingress-nginx get pods,svc
+            kubectl get ingressclass
+            echo "Listo. Asegurate de exponer/forwardear los NodePorts 61180 (HTTP) y 61443 (HTTPS)."

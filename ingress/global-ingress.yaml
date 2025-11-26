@@ -2,33 +2,35 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: ingress-principal
+  namespace: default  # Cambia si usas otro namespace para los servicios
   annotations:
-    # Si usas Nginx Ingress Controller:
-    kubernetes.io/ingress.class: "nginx"
-    # Si quieres subir el límite de tamaño de archivos (útil para el SaaS):
-    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    kubernetes.io/ingress.class: "nginx"  # Compatibilidad; la clase principal se define en spec.ingressClassName
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"  # Permite uploads de hasta 10MB
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"    # Redirige HTTP->HTTPS cuando el secreto TLS existe
 spec:
+  ingressClassName: nginx  # Debe coincidir con la IngressClass del Nginx Ingress Controller instalado
+  tls:
+    - hosts:
+        - "*.midominio.com"  # Certificado wildcard para todos los subdominios y el host especifico
+      secretName: wildcard-mydominio-tls  # Debe existir; puedes generarlo o que cert-manager lo administre
   rules:
-    # --- REGLA 1: APP indumentaria ---
-    - host: indumentaria.midominio.com
+    - host: "*.midominio.com"  # Cubre cualquier subdominio y envia a la app de indumentaria
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: indumentaria-service  # Debe coincidir con el service.yaml del Repo indumentaria
+                name: indumentaria-service  # Service de indumentaria (escucha en el puerto 80)
                 port:
                   number: 80
-
-    # --- REGLA 2: APP SAAS ---
-    - host: sistema.midominio.com
+    - host: sistema.midominio.com  # Host fijo que envia al otro software
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: saas-service    # Debe coincidir con el service.yaml del Repo SaaS
+                name: saas-service  # Service del otro software (puerto 80)
                 port:
                   number: 80
