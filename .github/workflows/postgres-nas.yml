@@ -1,0 +1,90 @@
+name: Gestion Postgres NAS  # Nombre del workflow, aparece en la UI de GitHub Actions
+
+on:
+  workflow_dispatch:        # Permite ejecutar el workflow manualmente
+    inputs:
+      task:                 # Input principal: qué acción ejecutar en el NAS
+        description: "Accion a ejecutar"
+        required: true
+        default: "backup"
+        type: choice
+        options:
+          - backup          # Crear backup de la base de datos
+          - start           # Iniciar el contenedor/servicio de Postgres
+          - restart         # Reiniciar el contenedor/servicio de Postgres
+          - status          # Ver estado del contenedor/servicio de Postgres
+      data_dir:
+        description: "Ruta de datos en el NAS (opcional)"
+        required: false     # Si no se define, el script usará su valor por defecto
+      backup_dir:
+        description: "Ruta de backups en el NAS (opcional)"
+        required: false
+      port:
+        description: "Puerto a exponer en el NAS (opcional, por defecto 5432)"
+        required: false
+
+jobs:
+  postgres:
+    runs-on: ubuntu-latest  # Runner de GitHub Actions (máquina donde se ejecuta el workflow)
+    steps:
+      - name: Checkout del codigo
+        uses: actions/checkout@v4  # Clona el repositorio para que los scripts estén disponibles
+
+      - name: Subir script postgres al NAS
+        uses: appleboy/scp-action@v0.1.7  # Usa SCP para copiar archivos al NAS
+        with:
+          host: ${{ secrets.NAS_HOST }}       # Host del NAS guardado como secreto
+          username: ${{ secrets.NAS_USER }}   # Usuario SSH del NAS
+          key: ${{ secrets.NAS_SSH_KEY }}     # Llave privada SSH
+          port: ${{ secrets.NAS_PORT }}       # Puerto SSH del NAS
+          source: "scripts/postgres-nas.sh"   # Script local a subir
+          target: "/tmp"                      # Carpeta temporal en el NAS donde se sube el script
+
+      - name: Ejecutar accion solicitada
+        uses: appleboy/ssh-action@v1.0.0      # Ejecuta comandos por SSH en el NAS
+        with:
+          host: ${{ secrets.NAS_HOST }}       # Mismo host del NAS
+          username: ${{ secrets.NAS_USER }}
+          key: ${{ secrets.NAS_SSH_KEY }}
+          port: ${{ secrets.NAS_PORT }}
+          script: |
+            set -euo pipefail
+            # -e: salir si un comando falla
+            # -u: error si se usa una variable no definida
+            # -o pipefail: falla si cualquier comando en un pipe falla
+
+            # Ajusta el PATH para incluir binarios de Container Station en diferentes volúmenes posibles
+            export PATH=$PATH:/usr/local/bin:/share/CACHEDEV1_DATA/.qpkg/container-station/bin:/share/ZFS530_DATA/.qpkg/container-station/bin
+
+            # Directorio de instalación del script en el home del usuario del NAS
+            install_dir="/share/homes/${{ secrets.NAS_USER }}/deployments/postgres"
+
+            # Ruta inicial donde se subió el script. Primero se intenta con subcarpeta /scripts
+            tmp_script="/tmp/scripts/postgres-nas.sh"
+            # Si no existe en /tmp/scripts, se asume que está directamente en /tmp
+            [ -f "$tmp_script" ] || tmp_script="/tmp/postgres-nas.sh"
+
+            # Crea el directorio de despliegue (si no existe)
+            mkdir -p "$install_dir"
+
+            # Mueve el script desde /tmp al directorio definitivo, sobrescribiendo si ya existe
+            mv -f "$tmp_script" "$install_dir/postgres-nas.sh"
+
+            # Da permisos de ejecución al script
+            chmod +x "$install_dir/postgres-nas.sh"
+
+            # Variables de entorno sensibles para Postgres, definidas como secretos en GitHub
+            export POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}"
+            export POSTGRES_USER="${{ secrets.POSTGRES_USER }}"
+
+            # Si el input data_dir no está vacío, se exporta como PG_DATA_DIR para que lo use el script
+            if [ -n "${{ inputs.data_dir }}" ]; then export PG_DATA_DIR="${{ inputs.data_dir }}"; fi
+
+            # Si el input backup_dir no está vacío, se exporta como PG_BACKUP_DIR
+            if [ -n "${{ inputs.backup_dir }}" ]; then export PG_BACKUP_DIR="${{ inputs.backup_dir }}"; fi
+
+            # Si el input port no está vacío, se exporta como PG_PORT, sino el script usará el por defecto (5432)
+            if [ -n "${{ inputs.port }}" ]; then export PG_PORT="${{ inputs.port }}"; fi
+
+            # Ejecuta el script en el NAS con la tarea solicitada (backup, start, restart o status)
+            "$install_dir/postgres-nas.sh" "${{ inputs.task }}"

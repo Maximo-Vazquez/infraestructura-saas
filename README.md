@@ -253,3 +253,25 @@ kubectl create secret generic db-credentials ...
 ```
 
 (ver plantilla local)
+
+## PostgreSQL en el NAS (fuera de Kubernetes)
+
+- Contenedor unico en el NAS (docker/podman) con datos en `/share/Public/postgres-data` (ruta pedida `public/postgres-data`) y backups en `/share/Public/postgres-backups`.
+- Workflow nuevo: **Gestion Postgres NAS** (`.github/workflows/postgres-nas.yml`, `workflow_dispatch`).
+  - Secrets requeridos en el repo: `NAS_HOST`, `NAS_USER`, `NAS_SSH_KEY`, `NAS_PORT` (ya existentes) y **`POSTGRES_PASSWORD`**. Opcional: `POSTGRES_USER`.
+  - Inputs: `task` (`start`, `backup`, `restart`, `status`), `data_dir`, `backup_dir`, `port` (overrides opcionales).
+  - Boton de backup: ejecuta `task=backup` y deja `postgres-YYYYMMDD-HHMMSS.sql` en `backup_dir`.
+- Script reusable en el NAS: `scripts/postgres-nas.sh` (se copia al NAS por el workflow). Uso manual por SSH:
+  ```bash
+  export POSTGRES_PASSWORD="tu_password"
+  ./scripts/postgres-nas.sh start   # crea/arranca contenedor nas-postgres (sin crear DB inicial)
+  ./scripts/postgres-nas.sh backup  # genera dump en /share/Public/postgres-backups
+  ./scripts/postgres-nas.sh status  # estado rapido
+- Bases adicionales (ej. Indumentaria, software_venta): créalas por SSH con psql:
+  ```bash
+  export PGPASSWORD="tu_password"
+  psql -h 127.0.0.1 -p 5432 -U "$POSTGRES_USER" -c 'CREATE DATABASE "Indumentaria";'
+  psql -h 127.0.0.1 -p 5432 -U "$POSTGRES_USER" -c 'CREATE DATABASE "software_venta";'
+  ```
+  ```
+- Conecta las apps con el secreto `db-credentials` (`secrets-templates/db-credentials.txt`): host = IP del NAS, puerto = 5432 (o el que expongas), user/password los mismos del contenedor.

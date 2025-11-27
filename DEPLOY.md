@@ -69,3 +69,22 @@ Cuando `indumentaria-service` y `saas-service` estén desplegados en el mismo na
 2. Placeholder: `kubectl apply -k ingress/maintenance`
 3. Ingress: `kubectl apply -f ingress/global-ingress.yaml`
 4. Swap a apps: editar services en el Ingress y volver a aplicar.
+
+## 9. PostgreSQL standalone en el NAS
+- Contenedor docker/podman fuera de Kubernetes. Datos en `/share/Public/postgres-data` (ruta pedida `public/postgres-data`). Backups en `/share/Public/postgres-backups`.
+- Workflow: **Gestion Postgres NAS** (`task=start|backup|restart|status`) copia y ejecuta `scripts/postgres-nas.sh` en el NAS. Requiere secrets `NAS_*` y `POSTGRES_PASSWORD` (opcional `POSTGRES_USER`). No crea DB inicial automáticamente.
+- Boton de backup: corre el workflow con `task=backup` y deja dumps `postgres-YYYYMMDD-HHMMSS.sql` en la carpeta de backups.
+- Manual por SSH:
+  ```bash
+  export POSTGRES_PASSWORD="tu_password"
+  ./scripts/postgres-nas.sh start   # contenedor nas-postgres, sin DB inicial
+  ./scripts/postgres-nas.sh backup  # dump en /share/Public/postgres-backups
+  ./scripts/postgres-nas.sh status
+  ```
+- Crear bases (ej. Indumentaria, software_venta):
+  ```bash
+  export PGPASSWORD="tu_password"
+  psql -h 127.0.0.1 -p 5432 -U "$POSTGRES_USER" -c 'CREATE DATABASE "Indumentaria";'
+  psql -h 127.0.0.1 -p 5432 -U "$POSTGRES_USER" -c 'CREATE DATABASE "software_venta";'
+  ```
+- Crea/actualiza el secreto `db-credentials` con host = IP del NAS y puerto = 5432 (o el que uses) para que las apps apunten a esta BD externa, indicando la base correcta para cada app.
