@@ -22,14 +22,16 @@ spec:
                   number: 80
 
     # --- REGLA ESPECIFICA: subdominio fijo para el SaaS ---
-    - host: sistema.mycloudnas.com
+
+
+    - host: indu.mycloudnas.com
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: maintenance-service     # Temporal: página de espera. Cambia a saas-service cuando esté lista la app.
+                name: maintenance-service
                 port:
                   number: 80
 

@@ -19,9 +19,7 @@ spec:
                 name: saas-service
                 port:
                   number: 80
-
-                  
-    - host: sistema.mycloudnas.com
+    - host: indu.mycloudnas.com
       http:
         paths:
           - path: /
