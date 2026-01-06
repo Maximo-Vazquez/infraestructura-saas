@@ -6,8 +6,13 @@ metadata:
   annotations:
     nginx.ingress.kubernetes.io/proxy-body-size: "10m"
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
   ingressClassName: nginx
+  tls:
+    - hosts:
+        - indu.mycloudnas.com
+      secretName: indu-mycloudnas-tls
   rules:
     - host: mi-nas-vaz.myqnapcloud.com
       http:
