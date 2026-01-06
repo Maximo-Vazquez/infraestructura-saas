@@ -14,6 +14,9 @@ spec:
     - hosts:
         - indu.mycloudnas.com
       secretName: indu-mycloudnas-tls
+    - hosts:
+        - mi-nas-vaz.myqnapcloud.com
+      secretName: mi-nas-vaz-tls
   rules:
     - host: mi-nas-vaz.myqnapcloud.com
       http:
