@@ -51,6 +51,9 @@ jobs:
             # 1) Ingress Controller (NodePort)
             kubectl apply -f ingress/ingress-controller.yaml
 
+            # 1.5) Cluster Issuer (Let's Encrypt)
+            kubectl apply -f ingress/issuer-letsencrypt-prod.yaml
+
             # 2) Pagina de mantenimiento (placeholder) siempre disponible
             kubectl apply -k ingress/maintenance
 
