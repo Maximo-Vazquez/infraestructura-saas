@@ -42,7 +42,7 @@ Usaremos **Cloudflare** como proveedor de DNS para aprovechar su seguridad y ges
 #### 3.2. En tu NAS (QNAP) / Router
 Para que el tráfico llegue al clúster, tienes dos opciones:
 
-*   **Opción A (Recomendada - Zero Touch):** En tu router, redirige los puertos 80 y 443 TCP directamente a la IP local de tu Ingress Controller (`192.168.X.X`). Esto evita usar el proxy del NAS.
+*   **Opción A (Recomendada - Zero Touch):** En tu router, redirige los puertos **80** a **61180** y **443** a **61443** hacia la IP de tu NAS (LAN IP). Esto entrega el tráfico directamente a Kubernetes, evitando el proxy manual.
 *   **Opción B (Proxy Inverso QNAP):** En "Network & File Services" -> "Reverse Proxy", agrega reglas para cada subdominio:
     *   `bibliotecadvschaco.com:443` -> `localhost:61443`
     *   `tienda.bibliotecadvschaco.com:443` -> `localhost:61443`

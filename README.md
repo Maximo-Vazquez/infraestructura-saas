@@ -36,8 +36,7 @@ El sistema utiliza **Cloudflare** para gestión de DNS y seguridad (Proxy).
 4.  **Registro A (*):** Apunta a tu IP Pública (Proxy Naranja 🟧) - para nuevos tenants automáticos.
 
 ### Configuración de Red (Router/NAS)
-Se recomienda redirigir puertos **80** y **443** del Router directamente a la IP interna del Ingress Controller, saltando el proxy del NAS.
-Si se usa el proxy del NAS, se deben agregar reglas manuales para cada subdominio hacia `localhost:61443`.
+**Opción Recomendada (Router):** Redirige los puertos **80** (Externo) a **61180** (NAS IP) y **443** (Externo) a **61443** (NAS IP) del NAS. Esto envía el tráfico directo a Kubernetes, saltando el proxy del NAS.
 
 ## Página temporal de mantenimiento
 
