@@ -26,24 +26,43 @@ jobs:
           username: ${{ secrets.NAS_USER }}
           key: ${{ secrets.NAS_SSH_KEY }}
           port: ${{ secrets.NAS_PORT }}
-          source: "ingress/**"
+          source: "ingress/**,scripts/**,secrets-templates/**"
           target: "/share/homes/${{ secrets.NAS_USER }}/deployments/ingress-global"
 
       - name: Desplegar flujo completo en el NAS
         uses: appleboy/ssh-action@v1.0.0
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         with:
           host: ${{ secrets.NAS_HOST }}
           username: ${{ secrets.NAS_USER }}
           key: ${{ secrets.NAS_SSH_KEY }}
           port: ${{ secrets.NAS_PORT }}
+          envs: CLOUDFLARE_API_TOKEN
           script: |
             set -euo pipefail
             echo "Desplegando infraestructura completa..."
             export PATH=$PATH:/usr/local/bin:/share/CACHEDEV1_DATA/.qpkg/container-station/bin:/share/ZFS530_DATA/.qpkg/container-station/bin
             export KUBECONFIG=${KUBECONFIG:-/share/homes/${{ secrets.NAS_USER }}/.kube/config}
 
-            cd /share/homes/${{ secrets.NAS_USER }}/deployments/ingress-global
-            mkdir -p /share/homes/${{ secrets.NAS_USER }}/deployments/ingress-global
+            BASE_DIR="/share/homes/${{ secrets.NAS_USER }}/deployments/ingress-global"
+            cd "$BASE_DIR"
+            
+            # 0) Instalación de dependencias (Cert-Manager)
+            echo "--- Verificando Cert-Manager ---"
+            chmod +x scripts/install-cert-manager.sh
+            bash scripts/install-cert-manager.sh
+
+            # 0.1) Configurar Secreto Cloudflare (Si existe el token)
+            if [ -n "$CLOUDFLARE_API_TOKEN" ]; then
+                echo "--- Configurando Token de Cloudflare ---"
+                # Reemplazar placeholder y aplicar (sin crear archivo intermedio en disco por seguridad)
+                sed "s/REPLACE_WITH_YOUR_CLOUDFLARE_API_TOKEN/$CLOUDFLARE_API_TOKEN/g" secrets-templates/cloudflare-api-token.yaml | kubectl apply -f -
+            else
+                echo "⚠️ ADVERTENCIA: CLOUDFLARE_API_TOKEN no detectado en GitHub Secrets."
+                echo "El issuer de Lets Encrypt fallará al intentar validar dominios Wildcard."
+            fi
+
             # Limpieza previa para evitar conflictos de NodePort/selector inmutable
             kubectl -n ingress-nginx delete service ingress-nginx-controller --ignore-not-found
             kubectl -n ingress-nginx delete deployment ingress-nginx-controller --ignore-not-found
@@ -51,7 +70,7 @@ jobs:
             # 1) Ingress Controller (NodePort)
             kubectl apply -f ingress/ingress-controller.yaml
 
-            # 1.5) Cluster Issuer (Let's Encrypt)
+            # 1.5) Cluster Issuer (Let's Encrypt - DNS01)
             kubectl apply -f ingress/issuer-letsencrypt-prod.yaml
 
             # 2) Pagina de mantenimiento (placeholder) siempre disponible
