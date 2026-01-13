@@ -21,24 +21,23 @@ El controlador se despliega con NodePort (puertos 61180/61443 que permite QNAP).
 
 Recuerda abrir/forwardear en el NAS/Router los puertos 61180 (HTTP) y 61443 (HTTPS) hacia afuera si quieres exponer servicios publicamente.
 
-## Dominios y DNS (mi-nas-vaz.myqnapcloud.com)
+## Dominios y DNS (Cloudflare)
 
-- Host de entrada: `mi-nas-vaz.myqnapcloud.com` (QNAP). El Ingress está configurado para ese host y cualquier subdominio.
-- Página temporal: todas las rutas apuntan a `maintenance-service` hasta que las apps estén listas (ver más abajo cómo cambiarlo).
-- SaaS: usa `sistema.mycloudnas.com` (también temporalmente apunta a maintenance).
-- TLS: se termina en el proxy inverso del NAS/QNAP. El Ingress recibe HTTP desde el proxy (sin secret TLS en el cluster).
-- DNS:
-  - Si usas el dominio QNAP tal cual, no hay que crear registros (ya apunta al NAS). Solo asegura el port forwarding 61180→61180 y 61443→61443 hacia el NAS.
-  - Si quieres un dominio propio, crea CNAMEs que apunten a `mi-nas-vaz.myqnapcloud.com`:
-    - `miapp.tudominio.com -> mi-nas-vaz.myqnapcloud.com`
-    - `sistema.tudominio.com -> mi-nas-vaz.myqnapcloud.com`
-    y renombra los hosts en `ingress/global-ingress.yaml` acorde.
+El sistema utiliza **Cloudflare** para gestión de DNS y seguridad (Proxy).
 
-### Flujo mínimo para que se vea desde afuera
-1. Ingress Controller arriba (`kubectl -n ingress-nginx get pods`).
-2. Forwarding/UPnP en router/NAS de 61180 y 61443 hacia el NAS.
-3. DNS apuntando al dominio del NAS (o CNAME).
-4. TLS: usa el certificado gestionado por el proxy inverso/QNAP. Asegura el forwarding 443 externo -> 61443 y 80 externo -> 61180 hacia el Ingress.
+- **Host Principal:** `bibliotecadvschaco.com` (SaaS)
+- **Subdominios Tenants:** `*.bibliotecadvschaco.com` (Indumentaria/Tiendas)
+- **TLS:** Gestionado por el Ingress (Let's Encrypt) + Cloudflare (Full SSL).
+
+### Configuración DNS Requerida (Cloudflare)
+1.  **Registro A (@):** Apunta a tu IP Pública (Proxy Naranja 🟧).
+2.  **Registro A (www):** Apunta a tu IP Pública (Proxy Naranja 🟧).
+3.  **Registro A (tienda):** Apunta a tu IP Pública (Proxy Naranja 🟧).
+4.  **Registro A (*):** Apunta a tu IP Pública (Proxy Naranja 🟧) - para nuevos tenants automáticos.
+
+### Configuración de Red (Router/NAS)
+Se recomienda redirigir puertos **80** y **443** del Router directamente a la IP interna del Ingress Controller, saltando el proxy del NAS.
+Si se usa el proxy del NAS, se deben agregar reglas manuales para cada subdominio hacia `localhost:61443`.
 
 ## Página temporal de mantenimiento
 

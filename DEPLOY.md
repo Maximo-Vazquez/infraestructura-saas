@@ -26,23 +26,46 @@ kubectl apply -k ingress/maintenance
 kubectl -n default get pods,svc | findstr maintenance
 ```
 
-## 3. Aplicar el Ingress global
-Esto enruta los hosts al backend temporal `maintenance-service`.
+## 3. Configurar DNS y SSL (Cloudflare + Ingress)
+
+Usaremos **Cloudflare** como proveedor de DNS para aprovechar su seguridad y gestión de certificados simplificada, junto con el Ingress de Kubernetes.
+
+#### 3.1. En Cloudflare
+1.  Agrega tu dominio (ej: `bibliotecadvschaco.com`).
+2.  Ve a la sección **DNS** y crea los siguientes registros **A**:
+    *   **@** (Root) -> Tu IP Pública (con Proxy activado ☁️ Naranja).
+    *   **www** -> Tu IP Pública (con Proxy activado ☁️ Naranja).
+    *   **tienda** -> Tu IP Pública (con Proxy activado ☁️ Naranja).
+    *   (Opcional) **\*** (Wildcard) -> Tu IP Pública (con Proxy activado ☁️ Naranja).
+3.  (Para automatización total) Crea un **API Token** con permisos de edición de DNS para usar certificados Wildcard y validación DNS-01.
+
+#### 3.2. En tu NAS (QNAP) / Router
+Para que el tráfico llegue al clúster, tienes dos opciones:
+
+*   **Opción A (Recomendada - Zero Touch):** En tu router, redirige los puertos 80 y 443 TCP directamente a la IP local de tu Ingress Controller (`192.168.X.X`). Esto evita usar el proxy del NAS.
+*   **Opción B (Proxy Inverso QNAP):** En "Network & File Services" -> "Reverse Proxy", agrega reglas para cada subdominio:
+    *   `bibliotecadvschaco.com:443` -> `localhost:61443`
+    *   `tienda.bibliotecadvschaco.com:443` -> `localhost:61443`
+    *   *Nota: El proxy de QNAP no soporta Wildcards fácilmente.*
+
+## 3.3. Configurar Certificados (Cert-Manager)
+El proyecto incluye `issuer-letsencrypt-prod.yaml`.
+*   Para dominios exactos (HTTP-01): Funciona "out of the box".
+*   Para Wildcards `*.dominio.com` (DNS-01): Requiere configurar un Secret con el API Token de Cloudflare.
+
+## 4. Aplicar el Ingress Global
+El archivo maestro es `ingress/global-ingress-apps.yaml`.
 ```bash
-kubectl apply -f ingress/global-ingress.yaml
-kubectl get ingress ingress-principal -o wide
+kubectl apply -f ingress/global-ingress-apps.yaml
 ```
+Este archivo ya contiene:
+*   `bibliotecadvschaco.com` -> `saas-service`
+*   `*.bibliotecadvschaco.com` -> `indumentaria-service`
 
-## 4. Verificación inicial
-- Probar `http(s)://mi-nas-vaz.myqnapcloud.com` y `sistema.mycloudnas.com`: debe verse la página de mantenimiento (el candado lo entrega el proxy inverso).
-- Si ves 503:
-  - Asegura que `maintenance-service` y su Deployment estén Ready.
-  - Confirma que el controller está arriba: `kubectl -n ingress-nginx get pods`.
-- Si ves certificado no confiable: revisa el proxy inverso/QNAP y el certificado configurado allí (el Ingress no gestiona TLS).
+## 5. Verificación
+1.  Entra a `https://bibliotecadvschaco.com` -> Debería cargar tu SaaS.
+2.  Entra a `https://tienda.bibliotecadvschaco.com` -> Debería cargar tu tienda.
 
-## 5. DNS
-- Usando el dominio QNAP: ya apunta al NAS; solo asegúrate del port forwarding.
-- Con dominio propio: crea CNAMEs a `mi-nas-vaz.myqnapcloud.com` (ej. `app.tudominio.com -> mi-nas-vaz.myqnapcloud.com`), y ajusta los hosts en `ingress/global-ingress.yaml` si cambias de nombre.
 
 ## 6. Cambiar del placeholder a las apps reales
 Cuando `indumentaria-service` y `saas-service` estén desplegados en el mismo namespace (`default`):

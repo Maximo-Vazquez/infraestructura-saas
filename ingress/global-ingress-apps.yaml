@@ -12,13 +12,12 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - indu.mycloudnas.com
-      secretName: indu-mycloudnas-tls
-    - hosts:
-        - mi-nas-vaz.myqnapcloud.com
-      secretName: mi-nas-vaz-tls
+        - bibliotecadvschaco.com
+        - "*.bibliotecadvschaco.com"  # Certificado Wildcard (Requiere DNS-01, ver nota abajo)
+      secretName: bibliotecadvschaco-wildcard-tls
   rules:
-    - host: mi-nas-vaz.myqnapcloud.com
+    # 1. Regla Principal (SaaS)
+    - host: bibliotecadvschaco.com
       http:
         paths:
           - path: /
@@ -28,17 +27,20 @@ spec:
                 name: saas-service
                 port:
                   number: 80
-    - host: indu.mycloudnas.com
+    - host: www.bibliotecadvschaco.com
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: indumentaria-service
+                name: saas-service
                 port:
                   number: 80
-    - http:
+
+    # 2. Regla Wildcard para Tenants (Cualquier subdominio va a Indumentaria)
+    - host: "*.bibliotecadvschaco.com"
+      http:
         paths:
           - path: /
             pathType: Prefix

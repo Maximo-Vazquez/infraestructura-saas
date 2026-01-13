@@ -2,29 +2,15 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: ingress-principal
-  namespace: default  # Cambia si usas otro namespace para los servicios
+  namespace: default
   annotations:
-    nginx.ingress.kubernetes.io/proxy-body-size: "10m"  # Permite uploads de hasta 10MB
-    nginx.ingress.kubernetes.io/ssl-redirect: "false"   # El proxy inverso ya termina TLS; el Ingress recibe HTTP
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
 spec:
-  ingressClassName: nginx  # Debe coincidir con la IngressClass del Nginx Ingress Controller instalado
+  ingressClassName: nginx
   rules:
-    # --- REGLA BASE: dominio principal QNAP -> indumentaria ---
-    - host: mi-nas-vaz.myqnapcloud.com         # Sin wildcard; Ingress no admite * en spec.rules.host
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: maintenance-service     # Temporal: página de espera. Cambia a indumentaria-service cuando esté lista la app.
-                port:
-                  number: 80
-
-    # --- REGLA ESPECIFICA: subdominio fijo para el SaaS ---
-
-
-    - host: indu.mycloudnas.com
+    # Reglas para bibliotecadvschaco.com apuntando a mantenimiento
+    - host: bibliotecadvschaco.com
       http:
         paths:
           - path: /
@@ -34,9 +20,18 @@ spec:
                 name: maintenance-service
                 port:
                   number: 80
-
-    # --- REGLA CATCH-ALL: cualquier otro host/subdominio -> indumentaria ---
-    # Deja host vacío para que Nginx capture cualquier Host header y lo envíe a la página de espera.
+    - host: www.bibliotecadvschaco.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: maintenance-service
+                port:
+                  number: 80
+    
+    # Catch-all: cualquier otro tráfico también va a mantenimiento
     - http:
         paths:
           - path: /
