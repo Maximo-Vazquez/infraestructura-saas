@@ -12,12 +12,12 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - bibliotecadvschaco.com
-        - "*.bibliotecadvschaco.com"  # Certificado Wildcard (Requiere DNS-01, ver nota abajo)
-      secretName: bibliotecadvschaco-wildcard-tls
+        - indutienda.com
+        - "*.indutienda.com"  # Certificado Wildcard (Requiere DNS-01, ver nota abajo)
+      secretName: indutienda-wildcard-tls
   rules:
     # 1. Regla Principal (SaaS)
-    - host: bibliotecadvschaco.com
+    - host: indutienda.com
       http:
         paths:
           - path: /
@@ -27,7 +27,7 @@ spec:
                 name: saas-service
                 port:
                   number: 80
-    - host: www.bibliotecadvschaco.com
+    - host: www.indutienda.com
       http:
         paths:
           - path: /
@@ -39,7 +39,7 @@ spec:
                   number: 80
 
     # 2. Regla Wildcard para Tenants (Cualquier subdominio va a Indumentaria)
-    - host: "*.bibliotecadvschaco.com"
+    - host: "*.indutienda.com"
       http:
         paths:
           - path: /

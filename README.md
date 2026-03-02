@@ -25,8 +25,8 @@ Recuerda abrir/forwardear en el NAS/Router los puertos 61180 (HTTP) y 61443 (HTT
 
 El sistema utiliza **Cloudflare** para gestión de DNS y seguridad (Proxy).
 
-- **Host Principal:** `bibliotecadvschaco.com` (SaaS)
-- **Subdominios Tenants:** `*.bibliotecadvschaco.com` (Indumentaria/Tiendas)
+- **Host Principal:** `indutienda.com` (SaaS)
+- **Subdominios Tenants:** `*.indutienda.com` (Indumentaria/Tiendas)
 - **TLS:** Gestionado por el Ingress (Let's Encrypt) + Cloudflare (Full SSL).
 
 ### Configuración DNS Requerida (Cloudflare)

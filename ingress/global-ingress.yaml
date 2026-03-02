@@ -9,8 +9,8 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    # Reglas para bibliotecadvschaco.com apuntando a mantenimiento
-    - host: bibliotecadvschaco.com
+    # Reglas para indutienda.com apuntando a mantenimiento
+    - host: indutienda.com
       http:
         paths:
           - path: /
@@ -20,7 +20,7 @@ spec:
                 name: maintenance-service
                 port:
                   number: 80
-    - host: www.bibliotecadvschaco.com
+    - host: www.indutienda.com
       http:
         paths:
           - path: /

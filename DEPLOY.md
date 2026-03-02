@@ -31,7 +31,7 @@ kubectl -n default get pods,svc | findstr maintenance
 Usaremos **Cloudflare** como proveedor de DNS para aprovechar su seguridad y gestión de certificados simplificada, junto con el Ingress de Kubernetes.
 
 #### 3.1. En Cloudflare
-1.  Agrega tu dominio (ej: `bibliotecadvschaco.com`).
+1.  Agrega tu dominio (ej: `indutienda.com`).
 2.  Ve a la sección **DNS** y crea los siguientes registros **A**:
     *   **@** (Root) -> Tu IP Pública (con Proxy activado ☁️ Naranja).
     *   **www** -> Tu IP Pública (con Proxy activado ☁️ Naranja).
@@ -44,8 +44,8 @@ Para que el tráfico llegue al clúster, tienes dos opciones:
 
 *   **Opción A (Recomendada - Zero Touch):** En tu router, redirige los puertos **80** a **61180** y **443** a **61443** hacia la IP de tu NAS (LAN IP). Esto entrega el tráfico directamente a Kubernetes, evitando el proxy manual.
 *   **Opción B (Proxy Inverso QNAP):** En "Network & File Services" -> "Reverse Proxy", agrega reglas para cada subdominio:
-    *   `bibliotecadvschaco.com:443` -> `localhost:61443`
-    *   `tienda.bibliotecadvschaco.com:443` -> `localhost:61443`
+    *   `indutienda.com:443` -> `localhost:61443`
+    *   `tienda.indutienda.com:443` -> `localhost:61443`
     *   *Nota: El proxy de QNAP no soporta Wildcards fácilmente.*
 
 ## 3.3. Configurar Certificados (Cert-Manager)
@@ -59,12 +59,12 @@ El archivo maestro es `ingress/global-ingress-apps.yaml`.
 kubectl apply -f ingress/global-ingress-apps.yaml
 ```
 Este archivo ya contiene:
-*   `bibliotecadvschaco.com` -> `saas-service`
-*   `*.bibliotecadvschaco.com` -> `indumentaria-service`
+*   `indutienda.com` -> `saas-service`
+*   `*.indutienda.com` -> `indumentaria-service`
 
 ## 5. Verificación
-1.  Entra a `https://bibliotecadvschaco.com` -> Debería cargar tu SaaS.
-2.  Entra a `https://tienda.bibliotecadvschaco.com` -> Debería cargar tu tienda.
+1.  Entra a `https://indutienda.com` -> Debería cargar tu SaaS.
+2.  Entra a `https://tienda.indutienda.com` -> Debería cargar tu tienda.
 
 
 ## 6. Cambiar del placeholder a las apps reales
