@@ -23,6 +23,10 @@ on:
       port:
         description: "Puerto a exponer en el VPS (opcional, por defecto 5432)"
         required: false
+      databases:
+        description: "Bases a crear (CSV). Ej: Indumentaria,software_venta. Vacio para no crear."
+        required: false
+        default: "Indumentaria,software_venta"
 
 jobs:
   postgres:
@@ -69,6 +73,6 @@ jobs:
             if [ -n "${{ inputs.data_dir }}" ]; then export PG_DATA_DIR="${{ inputs.data_dir }}"; fi
             if [ -n "${{ inputs.backup_dir }}" ]; then export PG_BACKUP_DIR="${{ inputs.backup_dir }}"; fi
             if [ -n "${{ inputs.port }}" ]; then export PG_PORT="${{ inputs.port }}"; fi
+            if [ -n "${{ inputs.databases }}" ]; then export PG_DATABASES="${{ inputs.databases }}"; fi
 
             "$install_dir/postgres-vps.sh" "${{ inputs.task }}"
-

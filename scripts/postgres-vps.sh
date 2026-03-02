@@ -14,6 +14,7 @@ PG_BACKUP_DIR="${PG_BACKUP_DIR:-${HOME}/postgres-backups}"
 PG_PORT="${PG_PORT:-5432}"
 PG_USER="${POSTGRES_USER:-postgres}"
 PG_PASSWORD="${POSTGRES_PASSWORD:-}"
+PG_DATABASES="${PG_DATABASES:-}"
 
 fail() {
   echo "Error: $*" >&2
@@ -39,6 +40,63 @@ ensure_password() {
 
 ensure_dirs() {
   mkdir -p "$PG_DATA_DIR" "$PG_BACKUP_DIR"
+}
+
+validate_db_name() {
+  local name="$1"
+  [[ "$name" =~ ^[A-Za-z0-9_]+$ ]] || fail "Invalid database name '$name'. Use only letters, numbers, underscore."
+}
+
+wait_for_postgres() {
+  ensure_runtime
+  ensure_password
+
+  local retries="${PG_READY_RETRIES:-60}"
+  local sleep_s="${PG_READY_SLEEP_SECONDS:-1}"
+  local i=0
+
+  while (( i < retries )); do
+    if $DOCKER_BIN exec -e PGPASSWORD="$PG_PASSWORD" "$PG_CONTAINER_NAME" \
+      pg_isready -h 127.0.0.1 -U "$PG_USER" -d postgres >/dev/null 2>&1; then
+      return 0
+    fi
+    sleep "$sleep_s"
+    ((i++))
+  done
+  fail "Postgres did not become ready in time."
+}
+
+ensure_databases() {
+  [[ -n "${PG_DATABASES// /}" ]] || return 0
+
+  ensure_runtime
+  ensure_password
+
+  if ! container_running; then
+    fail "Container ${PG_CONTAINER_NAME} is not running. Run start first."
+  fi
+
+  wait_for_postgres
+
+  # Split comma-separated list
+  IFS=',' read -r -a dbs <<<"$PG_DATABASES"
+  for raw in "${dbs[@]}"; do
+    db="$(echo "$raw" | xargs)"
+    [[ -n "$db" ]] || continue
+    validate_db_name "$db"
+
+    exists="$($DOCKER_BIN exec -e PGPASSWORD="$PG_PASSWORD" "$PG_CONTAINER_NAME" \
+      psql -h 127.0.0.1 -U "$PG_USER" -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='${db}';" 2>/dev/null | tr -d '[:space:]' || true)"
+
+    if [[ "$exists" == "1" ]]; then
+      echo "Database '${db}' already exists."
+      continue
+    fi
+
+    echo "Creating database '${db}'..."
+    $DOCKER_BIN exec -e PGPASSWORD="$PG_PASSWORD" "$PG_CONTAINER_NAME" \
+      psql -h 127.0.0.1 -U "$PG_USER" -d postgres -v ON_ERROR_STOP=1 -c "CREATE DATABASE \"${db}\";"
+  done
 }
 
 container_exists() {
@@ -73,6 +131,7 @@ start_postgres() {
   fi
 
   echo "PostgreSQL available on port ${PG_PORT} (host network). Data: ${PG_DATA_DIR}"
+  ensure_databases
 }
 
 backup_postgres() {
@@ -141,4 +200,3 @@ case "$ACTION" in
     fail "Usage: $0 {start|deploy|backup|status|restart|stop}"
     ;;
 esac
-
