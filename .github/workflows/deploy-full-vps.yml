@@ -11,6 +11,14 @@ on:
         options:
           - mantenimiento
           - apps
+      configure_standard_ports:
+        description: "Configurar redireccion 80/443 hacia NodePorts 30080/30443"
+        required: true
+        default: "true"
+        type: choice
+        options:
+          - "true"
+          - "false"
 
 jobs:
   deploy:
@@ -89,6 +97,54 @@ jobs:
             # 1) Ingress Controller (NodePort)
             # En VPS (k3s/k8s por defecto) el rango de NodePort suele ser 30000-32767.
             kubectl apply -f ingress/ingress-controller-vps.yaml
+
+            # 1.1) Redireccion de puertos estandar hacia NodePorts (80->30080, 443->30443)
+            if [ "${{ inputs.configure_standard_ports }}" = "true" ]; then
+              echo "--- Configurando redireccion 80/443 -> 30080/30443 ---"
+
+              if command -v sudo >/dev/null 2>&1 && [ "$(id -u)" -ne 0 ]; then
+                SUDO="sudo"
+              else
+                SUDO=""
+              fi
+
+              if ! command -v nft >/dev/null 2>&1; then
+                echo "ADVERTENCIA: nft no esta instalado; se omite la configuracion de puertos estandar."
+              else
+                $SUDO mkdir -p /etc/nftables.d
+
+                cat > /tmp/ingress-nodeport-redirect.nft <<'EOF'
+            table inet codex_ingress_redirect {
+              chain prerouting {
+                type nat hook prerouting priority -100; policy accept;
+                tcp dport 80 redirect to :30080
+                tcp dport 443 redirect to :30443
+              }
+            }
+            EOF
+
+                $SUDO mv /tmp/ingress-nodeport-redirect.nft /etc/nftables.d/ingress-nodeport-redirect.nft
+
+                if [ ! -f /etc/nftables.conf ]; then
+                  cat > /tmp/nftables.conf <<'EOF'
+            #!/usr/sbin/nft -f
+            flush ruleset
+            include "/etc/nftables.d/*.nft"
+            EOF
+                  $SUDO mv /tmp/nftables.conf /etc/nftables.conf
+                elif ! $SUDO grep -q '/etc/nftables.d/\*\.nft' /etc/nftables.conf; then
+                  echo 'include "/etc/nftables.d/*.nft"' | $SUDO tee -a /etc/nftables.conf >/dev/null
+                fi
+
+                $SUDO nft -f /etc/nftables.conf
+
+                if command -v systemctl >/dev/null 2>&1; then
+                  $SUDO systemctl enable --now nftables >/dev/null 2>&1 || true
+                fi
+
+                echo "Redireccion de puertos estandar configurada."
+              fi
+            fi
 
             # 1.5) Cluster Issuer (Let's Encrypt - DNS01)
             kubectl apply -f ingress/issuer-letsencrypt-prod.yaml
