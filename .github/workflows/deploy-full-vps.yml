@@ -1,0 +1,111 @@
+name: Despliegue Infra Completa VPS (Controlador + Mantenimiento + Ingress)
+
+on:
+  workflow_dispatch:
+    inputs:
+      backend_mode:
+        description: "Selecciona backend: mantenimiento (landing) o apps (indumentaria/saas)"
+        required: true
+        default: "mantenimiento"
+        type: choice
+        options:
+          - mantenimiento
+          - apps
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del codigo
+        uses: actions/checkout@v4
+
+      - name: Copiar configuraciones al VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          source: "ingress/**,scripts/**,secrets-templates/**"
+          target: "/home/${{ secrets.VPS_USER }}/deployments/ingress-global"
+
+      - name: Desplegar flujo completo en el VPS
+        uses: appleboy/ssh-action@v1.0.0
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          envs: CLOUDFLARE_API_TOKEN
+          script: |
+            set -euo pipefail
+            echo "Desplegando infraestructura completa en VPS..."
+
+            export PATH="$PATH:/usr/local/bin:/usr/bin:/bin"
+
+            # Si el VPS usa k3s y no tiene kubectl, crea un wrapper local.
+            if ! command -v kubectl >/dev/null 2>&1 && command -v k3s >/dev/null 2>&1; then
+              mkdir -p "$HOME/.local/bin"
+              cat >"$HOME/.local/bin/kubectl" <<'EOF'
+            #!/usr/bin/env bash
+            exec k3s kubectl "$@"
+            EOF
+              chmod +x "$HOME/.local/bin/kubectl"
+              export PATH="$HOME/.local/bin:$PATH"
+            fi
+
+            # Kubeconfig: k3s suele usar /etc/rancher/k3s/k3s.yaml (si existe).
+            if [ -z "${KUBECONFIG:-}" ]; then
+              if [ -f /etc/rancher/k3s/k3s.yaml ]; then
+                export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+              else
+                export KUBECONFIG="$HOME/.kube/config"
+              fi
+            fi
+
+            BASE_DIR="/home/${{ secrets.VPS_USER }}/deployments/ingress-global"
+            cd "$BASE_DIR"
+
+            # 0) Instalacion de dependencias (Cert-Manager)
+            echo "--- Verificando Cert-Manager ---"
+            chmod +x scripts/install-cert-manager.sh
+            bash scripts/install-cert-manager.sh
+
+            # 0.1) Configurar Secreto Cloudflare (Si existe el token)
+            if [ -n "$CLOUDFLARE_API_TOKEN" ]; then
+              echo "--- Configurando Token de Cloudflare ---"
+              sed "s/REPLACE_WITH_YOUR_CLOUDFLARE_API_TOKEN/$CLOUDFLARE_API_TOKEN/g" secrets-templates/cloudflare-api-token.yaml | kubectl apply -f -
+            else
+              echo "ADVERTENCIA: CLOUDFLARE_API_TOKEN no detectado en GitHub Secrets."
+              echo "El issuer de Lets Encrypt fallara al intentar validar dominios Wildcard."
+            fi
+
+            # Limpieza previa para evitar conflictos de NodePort/selector inmutable
+            kubectl -n ingress-nginx delete service ingress-nginx-controller --ignore-not-found
+            kubectl -n ingress-nginx delete deployment ingress-nginx-controller --ignore-not-found
+
+            # 1) Ingress Controller (NodePort)
+            kubectl apply -f ingress/ingress-controller.yaml
+
+            # 1.5) Cluster Issuer (Let's Encrypt - DNS01)
+            kubectl apply -f ingress/issuer-letsencrypt-prod.yaml
+
+            # 2) Pagina de mantenimiento (placeholder) siempre disponible
+            kubectl apply -k ingress/maintenance
+
+            # 3) Seleccionar backend para las reglas del Ingress
+            BACKEND_MODE="${{ inputs.backend_mode }}"
+            if [ "$BACKEND_MODE" = "apps" ]; then
+              INGRESS_FILE="ingress/global-ingress-apps.yaml"
+              echo "Usando backends reales (apps). Asegurate de que los Services existan."
+            else
+              INGRESS_FILE="ingress/global-ingress.yaml"
+              echo "Usando pagina de mantenimiento como backend."
+            fi
+
+            kubectl apply -f "$INGRESS_FILE"
+            kubectl get ingress ingress-principal -o wide
+            echo "Despliegue finalizado con modo backend: $BACKEND_MODE"
+
