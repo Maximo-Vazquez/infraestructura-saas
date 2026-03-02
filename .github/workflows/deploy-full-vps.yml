@@ -87,7 +87,8 @@ jobs:
             kubectl -n ingress-nginx delete deployment ingress-nginx-controller --ignore-not-found
 
             # 1) Ingress Controller (NodePort)
-            kubectl apply -f ingress/ingress-controller.yaml
+            # En VPS (k3s/k8s por defecto) el rango de NodePort suele ser 30000-32767.
+            kubectl apply -f ingress/ingress-controller-vps.yaml
 
             # 1.5) Cluster Issuer (Let's Encrypt - DNS01)
             kubectl apply -f ingress/issuer-letsencrypt-prod.yaml
@@ -108,4 +109,3 @@ jobs:
             kubectl apply -f "$INGRESS_FILE"
             kubectl get ingress ingress-principal -o wide
             echo "Despliegue finalizado con modo backend: $BACKEND_MODE"
-
