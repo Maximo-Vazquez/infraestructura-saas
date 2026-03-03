@@ -8,6 +8,10 @@ Pasos ordenados para levantar el Ingress, la página de mantenimiento y luego la
 - Dominio de entrada: `mi-nas-vaz.myqnapcloud.com` (o CNAMEs que apunten allí).
 - TLS se termina en el proxy inverso/QNAP usando su certificado válido. El Ingress recibe HTTP en 61180/61443 desde el proxy.
 
+## Nota para VPS
+- En VPS, `ingress-controller-vps.yaml` usa `hostNetwork`, por lo que Nginx Ingress escucha directo en `80/443` del host.
+- No dependas de `EXTERNAL-IP` del Service para validar conectividad en este modo.
+
 ## 1. Instalar el Nginx Ingress Controller (una sola vez o cuando lo actualices)
 Opción manual:
 ```bash

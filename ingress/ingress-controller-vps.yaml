@@ -1,7 +1,7 @@
-# Despliegue del Nginx Ingress Controller para el VPS (modo LoadBalancer).
+# Despliegue del Nginx Ingress Controller para el VPS (modo hostNetwork).
 # - Namespace dedicado (ingress-nginx).
 # - IngressClass "nginx" marcada como default.
-# - Service tipo LoadBalancer expuesto en 80/443.
+# - El pod escucha directo en 80/443 del host (sin NodePort).
 #
 # Aplica con: kubectl apply -f ingress/ingress-controller-vps.yaml
 ---
@@ -126,8 +126,7 @@ metadata:
     app.kubernetes.io/component: controller
     app.kubernetes.io/part-of: ingress-nginx
 spec:
-  type: LoadBalancer
-  externalTrafficPolicy: Local
+  type: ClusterIP
   selector:
     app.kubernetes.io/name: ingress-nginx
     app.kubernetes.io/component: controller
@@ -161,6 +160,8 @@ spec:
         app.kubernetes.io/component: controller
         app.kubernetes.io/part-of: ingress-nginx
     spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
       serviceAccountName: ingress-nginx
       terminationGracePeriodSeconds: 300
       containers:
@@ -182,7 +183,6 @@ spec:
             - --controller-class=k8s.io/ingress-nginx
             - --ingress-class=nginx
             - --watch-ingress-without-class=false
-            - --publish-service=$(POD_NAMESPACE)/ingress-nginx-controller
             - --health-check-path=/healthz
           securityContext:
             allowPrivilegeEscalation: false
