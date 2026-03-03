@@ -1,7 +1,7 @@
-# Despliegue del Nginx Ingress Controller para el VPS (modo NodePort).
+# Despliegue del Nginx Ingress Controller para el VPS (modo LoadBalancer).
 # - Namespace dedicado (ingress-nginx).
 # - IngressClass "nginx" marcada como default.
-# - Service tipo NodePort con puertos dentro del rango típico 30000-32767.
+# - Service tipo LoadBalancer expuesto en 80/443.
 #
 # Aplica con: kubectl apply -f ingress/ingress-controller-vps.yaml
 ---
@@ -126,7 +126,7 @@ metadata:
     app.kubernetes.io/component: controller
     app.kubernetes.io/part-of: ingress-nginx
 spec:
-  type: NodePort
+  type: LoadBalancer
   externalTrafficPolicy: Local
   selector:
     app.kubernetes.io/name: ingress-nginx
@@ -135,11 +135,9 @@ spec:
     - name: http
       port: 80
       targetPort: http
-      nodePort: 30080
     - name: https
       port: 443
       targetPort: https
-      nodePort: 30443
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -254,4 +252,3 @@ spec:
           emptyDir: {}
         - name: telemetry
           emptyDir: {}
-
