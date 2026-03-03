@@ -160,3 +160,22 @@ Las apps deben:
 
 Guia completa de integracion y migracion:
 - `docs/s3-media-vps.md`
+
+## 11. Backups diarios VPS (Postgres + MinIO)
+
+Se agrega workflow diario para backups locales del VPS:
+- Workflow: `Backup Diario VPS (Postgres + MinIO Media)`
+- Archivo: `.github/workflows/backup-daily-vps.yml`
+- Cron: `06:00 UTC` (diario) = `03:00` hora Argentina (ART, UTC-3)
+- Retencion: 7 dias
+
+Incluye:
+- Backup Postgres comprimido (`postgres-YYYYMMDD-HHMMSS.sql.gz`)
+- Backup de media MinIO por snapshot (`minio-data-YYYYMMDD-HHMMSS.tar.gz`)
+
+Scripts:
+- `scripts/postgres-vps.sh` (acciones `backup` y `prune`)
+- `scripts/minio-vps-backup.sh` (acciones `backup|prune|status`)
+
+Guia completa (operacion, validacion, restore):
+- `docs/backups-vps.md`

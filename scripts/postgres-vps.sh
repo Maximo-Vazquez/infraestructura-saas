@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Helper to manage a standalone PostgreSQL container on a VPS (outside Kubernetes).
-# Actions: start|deploy, backup, status, restart, stop.
+# Actions: start|deploy, backup, status, restart, stop, prune.
 
 set -euo pipefail
 
@@ -11,6 +11,7 @@ PG_CONTAINER_NAME="${PG_CONTAINER_NAME:-vps-postgres}"
 PG_IMAGE="${PG_IMAGE:-postgres:16}"
 PG_DATA_DIR="${PG_DATA_DIR:-${HOME}/postgres-data}"
 PG_BACKUP_DIR="${PG_BACKUP_DIR:-${HOME}/postgres-backups}"
+PG_RETENTION_DAYS="${PG_RETENTION_DAYS:-7}"
 PG_PORT="${PG_PORT:-5432}"
 PG_USER="${POSTGRES_USER:-postgres}"
 PG_PASSWORD="${POSTGRES_PASSWORD:-}"
@@ -148,11 +149,29 @@ backup_postgres() {
   fi
 
   ts="$(date +%Y%m%d-%H%M%S)"
-  backup_file="${PG_BACKUP_DIR}/postgres-${ts}.sql"
+  backup_file="${PG_BACKUP_DIR}/postgres-${ts}.sql.gz"
   echo "Creating backup at ${backup_file}..."
   $DOCKER_BIN exec -e PGPASSWORD="$PG_PASSWORD" "$PG_CONTAINER_NAME" \
-    pg_dumpall -U "$PG_USER" >"$backup_file"
-  echo "Backup completed."
+    pg_dumpall -U "$PG_USER" | gzip -9 >"$backup_file"
+
+  if [[ ! -s "$backup_file" ]]; then
+    fail "Backup file is empty: ${backup_file}"
+  fi
+  echo "Backup completed: ${backup_file}"
+  prune_backups
+}
+
+prune_backups() {
+  ensure_dirs
+  [[ "$PG_RETENTION_DAYS" =~ ^[0-9]+$ ]] || fail "PG_RETENTION_DAYS must be numeric."
+  local mtime_keep="$((PG_RETENTION_DAYS - 1))"
+  if (( mtime_keep < 0 )); then
+    mtime_keep=0
+  fi
+
+  echo "Pruning PostgreSQL backups older than ${PG_RETENTION_DAYS} day(s) in ${PG_BACKUP_DIR}..."
+  find "$PG_BACKUP_DIR" -maxdepth 1 -type f -name 'postgres-*.sql.gz' -mtime "+${mtime_keep}" -print -delete || true
+  echo "Prune completed."
 }
 
 status_postgres() {
@@ -187,6 +206,9 @@ case "$ACTION" in
   backup)
     backup_postgres
     ;;
+  prune)
+    prune_backups
+    ;;
   status)
     status_postgres
     ;;
@@ -197,6 +219,6 @@ case "$ACTION" in
     stop_postgres
     ;;
   *)
-    fail "Usage: $0 {start|deploy|backup|status|restart|stop}"
+    fail "Usage: $0 {start|deploy|backup|prune|status|restart|stop}"
     ;;
 esac

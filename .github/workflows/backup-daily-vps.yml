@@ -1,0 +1,98 @@
+name: Backup Diario VPS (Postgres + MinIO Media)
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+    inputs:
+      run_postgres:
+        description: "Ejecutar backup de Postgres"
+        required: true
+        default: true
+        type: boolean
+      run_media:
+        description: "Ejecutar backup de media (MinIO)"
+        required: true
+        default: true
+        type: boolean
+      retention_days:
+        description: "Retencion en dias para ambos backups"
+        required: true
+        default: "7"
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del codigo
+        uses: actions/checkout@v4
+
+      - name: Subir scripts de backup al VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          source: "scripts/postgres-vps.sh,scripts/minio-vps-backup.sh"
+          target: "/tmp"
+
+      - name: Ejecutar backups diarios en VPS
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            set -euo pipefail
+
+            export PATH="$PATH:/usr/local/bin:/usr/bin:/bin"
+
+            INSTALL_DIR="/home/${{ secrets.VPS_USER }}/deployments/backups"
+            mkdir -p "$INSTALL_DIR"
+
+            TMP_PG="/tmp/scripts/postgres-vps.sh"
+            [ -f "$TMP_PG" ] || TMP_PG="/tmp/postgres-vps.sh"
+            mv -f "$TMP_PG" "$INSTALL_DIR/postgres-vps.sh"
+            chmod +x "$INSTALL_DIR/postgres-vps.sh"
+
+            TMP_MINIO="/tmp/scripts/minio-vps-backup.sh"
+            [ -f "$TMP_MINIO" ] || TMP_MINIO="/tmp/minio-vps-backup.sh"
+            mv -f "$TMP_MINIO" "$INSTALL_DIR/minio-vps-backup.sh"
+            chmod +x "$INSTALL_DIR/minio-vps-backup.sh"
+
+            export POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}"
+            export POSTGRES_USER="${{ secrets.POSTGRES_USER }}"
+            export PG_RETENTION_DAYS="${{ github.event.inputs.retention_days || '7' }}"
+            export MINIO_RETENTION_DAYS="${{ github.event.inputs.retention_days || '7' }}"
+
+            RUN_POSTGRES="${{ github.event.inputs.run_postgres || 'true' }}"
+            RUN_MEDIA="${{ github.event.inputs.run_media || 'true' }}"
+
+            echo "Backup daily run started. run_postgres=$RUN_POSTGRES run_media=$RUN_MEDIA retention=$PG_RETENTION_DAYS"
+
+            if [ "$RUN_POSTGRES" = "true" ]; then
+              "$INSTALL_DIR/postgres-vps.sh" backup
+            else
+              echo "Skipping Postgres backup by input."
+            fi
+
+            if [ "$RUN_MEDIA" = "true" ]; then
+              "$INSTALL_DIR/minio-vps-backup.sh" backup
+            else
+              echo "Skipping MinIO media backup by input."
+            fi
+
+            echo "Backup summary:"
+            echo "--- Postgres backups ---"
+            PG_BACKUP_DIR="${PG_BACKUP_DIR:-$HOME/postgres-backups}"
+            ls -1t "$PG_BACKUP_DIR"/postgres-*.sql.gz 2>/dev/null | head -n 5 || true
+            du -sh "$PG_BACKUP_DIR" 2>/dev/null || true
+
+            echo "--- MinIO backups ---"
+            MINIO_BACKUP_DIR="${MINIO_BACKUP_DIR:-$HOME/minio-backups}"
+            ls -1t "$MINIO_BACKUP_DIR"/minio-data-*.tar.gz 2>/dev/null | head -n 5 || true
+            du -sh "$MINIO_BACKUP_DIR" 2>/dev/null || true
+
+            echo "Backup daily run completed."

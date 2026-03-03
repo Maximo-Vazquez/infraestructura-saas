@@ -121,6 +121,11 @@ jobs:
               -e "s/REPLACE_WITH_MINIO_INDUMENTARIA_SECRET_KEY/$(escape_sed "$MINIO_INDUMENTARIA_SECRET_KEY")/g" \
               secrets-templates/minio-app-credentials.yaml | kubectl apply -f -
 
+            # 0.3) En k3s single-node: desactivar Traefik por conflicto de puertos 80/443 con ingress-nginx hostNetwork
+            kubectl -n kube-system scale deployment traefik --replicas=0 >/dev/null 2>&1 || true
+            kubectl -n kube-system delete service traefik --ignore-not-found >/dev/null 2>&1 || true
+            kubectl -n kube-system delete daemonset -l svccontroller.k3s.cattle.io/svcname=traefik --ignore-not-found >/dev/null 2>&1 || true
+
             # 1) Ingress Controller (hostNetwork directo en 80/443 del VPS)
             kubectl apply -f ingress/ingress-controller-vps.yaml
             kubectl -n ingress-nginx rollout status deployment/ingress-nginx-controller --timeout=420s

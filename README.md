@@ -307,3 +307,18 @@ kubectl create secret generic db-credentials ...
 
 Las dos apps deben usar `django-storages` + `boto3`, conectar al endpoint S3 y generar URLs firmadas (`AWS_QUERYSTRING_AUTH=true`).
 Ver pasos completos y snippet de settings en `docs/s3-media-vps.md`.
+
+## Backups diarios en VPS (Postgres + MinIO media)
+
+- Workflow automatico diario: `Backup Diario VPS (Postgres + MinIO Media)`.
+- Cron: `06:00 UTC` (cada dia) = `03:00` hora Argentina (ART, UTC-3).
+- Retencion: 7 dias.
+- Destino:
+  - Postgres: `~/postgres-backups`
+  - Media MinIO: `~/minio-backups` (snapshot de `/srv/minio-data`)
+
+Archivos principales:
+- `.github/workflows/backup-daily-vps.yml`
+- `scripts/postgres-vps.sh` (backup comprimido + prune)
+- `scripts/minio-vps-backup.sh` (backup media + prune)
+- `docs/backups-vps.md` (operacion y restore)
