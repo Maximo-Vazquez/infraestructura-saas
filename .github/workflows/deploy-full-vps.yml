@@ -123,7 +123,7 @@ jobs:
 
             # 1) Ingress Controller (hostNetwork directo en 80/443 del VPS)
             kubectl apply -f ingress/ingress-controller-vps.yaml
-            kubectl -n ingress-nginx rollout status deployment/ingress-nginx-controller --timeout=180s
+            kubectl -n ingress-nginx rollout status deployment/ingress-nginx-controller --timeout=420s
 
             # 1.5) Cluster Issuer (Let's Encrypt - DNS01)
             kubectl apply -f ingress/issuer-letsencrypt-prod.yaml

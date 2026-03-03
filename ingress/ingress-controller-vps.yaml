@@ -149,6 +149,8 @@ metadata:
     app.kubernetes.io/part-of: ingress-nginx
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app.kubernetes.io/name: ingress-nginx
@@ -163,7 +165,7 @@ spec:
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
       serviceAccountName: ingress-nginx
-      terminationGracePeriodSeconds: 300
+      terminationGracePeriodSeconds: 90
       containers:
         - name: controller
           image: registry.k8s.io/ingress-nginx/controller:v1.11.1
