@@ -316,6 +316,9 @@ Ver pasos completos y snippet de settings en `docs/s3-media-vps.md`.
 - Destino:
   - Postgres: `~/postgres-backups`
   - Media MinIO: `~/minio-backups` (snapshot de `/srv/minio-data`)
+- Si revisas como `root`, usa rutas absolutas del usuario de deploy:
+  - `/home/deploy/postgres-backups`
+  - `/home/deploy/minio-backups`
 
 Archivos principales:
 - `.github/workflows/backup-daily-vps.yml`

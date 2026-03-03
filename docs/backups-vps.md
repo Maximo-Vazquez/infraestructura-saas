@@ -72,6 +72,22 @@ Esperado:
 - hay archivos recientes `minio-data-*.tar.gz`
 - no hay archivos de mas de 7 dias
 
+### Verificacion cuando entras como root (caso comun)
+
+Si el workflow corre con usuario `deploy`, los backups no estaran en `/root/...`.
+Verifica con rutas absolutas:
+
+```bash
+ls -lah /home/deploy/postgres-backups | head
+ls -lah /home/deploy/minio-backups | head
+du -sh /home/deploy/postgres-backups /home/deploy/minio-backups
+```
+
+Salida esperada de ejemplo:
+- `postgres-YYYYMMDD-HHMMSS.sql.gz`
+- `minio-data-YYYYMMDD-HHMMSS.tar.gz`
+- tamanos distintos de cero en ambas carpetas
+
 ## Restore
 
 ### Restore Postgres
