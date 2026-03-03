@@ -1,0 +1,130 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: minio-bootstrap
+  namespace: default
+spec:
+  ttlSecondsAfterFinished: 300
+  backoffLimit: 4
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: bootstrap
+          image: quay.io/minio/mc:latest
+          env:
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: minio-root-credentials
+                  key: rootUser
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: minio-root-credentials
+                  key: rootPassword
+            - name: SAAS_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: minio-app-credentials
+                  key: saasAccessKey
+            - name: SAAS_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: minio-app-credentials
+                  key: saasSecretKey
+            - name: INDUMENTARIA_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: minio-app-credentials
+                  key: indumentariaAccessKey
+            - name: INDUMENTARIA_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: minio-app-credentials
+                  key: indumentariaSecretKey
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+
+              echo "Waiting for MinIO API..."
+              until mc alias set local http://minio-api:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD"; do
+                sleep 3
+              done
+
+              mc mb --ignore-existing local/media
+
+              cat >/tmp/saas-policy.json <<'EOF'
+              {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Effect": "Allow",
+                    "Action": ["s3:ListBucket"],
+                    "Resource": ["arn:aws:s3:::media"],
+                    "Condition": {
+                      "StringLike": {
+                        "s3:prefix": ["saas/*"]
+                      }
+                    }
+                  },
+                  {
+                    "Effect": "Allow",
+                    "Action": [
+                      "s3:GetObject",
+                      "s3:PutObject",
+                      "s3:DeleteObject",
+                      "s3:AbortMultipartUpload",
+                      "s3:ListMultipartUploadParts"
+                    ],
+                    "Resource": ["arn:aws:s3:::media/saas/*"]
+                  }
+                ]
+              }
+              EOF
+
+              cat >/tmp/indumentaria-policy.json <<'EOF'
+              {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Effect": "Allow",
+                    "Action": ["s3:ListBucket"],
+                    "Resource": ["arn:aws:s3:::media"],
+                    "Condition": {
+                      "StringLike": {
+                        "s3:prefix": ["indumentaria/*"]
+                      }
+                    }
+                  },
+                  {
+                    "Effect": "Allow",
+                    "Action": [
+                      "s3:GetObject",
+                      "s3:PutObject",
+                      "s3:DeleteObject",
+                      "s3:AbortMultipartUpload",
+                      "s3:ListMultipartUploadParts"
+                    ],
+                    "Resource": ["arn:aws:s3:::media/indumentaria/*"]
+                  }
+                ]
+              }
+              EOF
+
+              mc admin policy remove local saas-prefix >/dev/null 2>&1 || true
+              mc admin policy remove local indumentaria-prefix >/dev/null 2>&1 || true
+              mc admin policy create local saas-prefix /tmp/saas-policy.json
+              mc admin policy create local indumentaria-prefix /tmp/indumentaria-policy.json
+
+              mc admin user remove local "$SAAS_ACCESS_KEY" >/dev/null 2>&1 || true
+              mc admin user remove local "$INDUMENTARIA_ACCESS_KEY" >/dev/null 2>&1 || true
+              mc admin user add local "$SAAS_ACCESS_KEY" "$SAAS_SECRET_KEY"
+              mc admin user add local "$INDUMENTARIA_ACCESS_KEY" "$INDUMENTARIA_SECRET_KEY"
+
+              mc admin policy attach local saas-prefix --user "$SAAS_ACCESS_KEY"
+              mc admin policy attach local indumentaria-prefix --user "$INDUMENTARIA_ACCESS_KEY"
+
+              echo "MinIO bootstrap completed."

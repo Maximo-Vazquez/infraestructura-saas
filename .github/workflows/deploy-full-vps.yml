@@ -33,12 +33,18 @@ jobs:
         uses: appleboy/ssh-action@v1.0.0
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          MINIO_ROOT_USER: ${{ secrets.MINIO_ROOT_USER }}
+          MINIO_ROOT_PASSWORD: ${{ secrets.MINIO_ROOT_PASSWORD }}
+          MINIO_SAAS_ACCESS_KEY: ${{ secrets.MINIO_SAAS_ACCESS_KEY }}
+          MINIO_SAAS_SECRET_KEY: ${{ secrets.MINIO_SAAS_SECRET_KEY }}
+          MINIO_INDUMENTARIA_ACCESS_KEY: ${{ secrets.MINIO_INDUMENTARIA_ACCESS_KEY }}
+          MINIO_INDUMENTARIA_SECRET_KEY: ${{ secrets.MINIO_INDUMENTARIA_SECRET_KEY }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
-          envs: CLOUDFLARE_API_TOKEN
+          envs: CLOUDFLARE_API_TOKEN,MINIO_ROOT_USER,MINIO_ROOT_PASSWORD,MINIO_SAAS_ACCESS_KEY,MINIO_SAAS_SECRET_KEY,MINIO_INDUMENTARIA_ACCESS_KEY,MINIO_INDUMENTARIA_SECRET_KEY
           script: |
             set -euo pipefail
             echo "Desplegando infraestructura completa en VPS..."
@@ -82,6 +88,39 @@ jobs:
               echo "El issuer de Lets Encrypt fallara al intentar validar dominios Wildcard."
             fi
 
+            # 0.2) Configurar secretos de MinIO (obligatorios para S3 de media)
+            required_minio_vars=(
+              MINIO_ROOT_USER
+              MINIO_ROOT_PASSWORD
+              MINIO_SAAS_ACCESS_KEY
+              MINIO_SAAS_SECRET_KEY
+              MINIO_INDUMENTARIA_ACCESS_KEY
+              MINIO_INDUMENTARIA_SECRET_KEY
+            )
+            for var_name in "${required_minio_vars[@]}"; do
+              if [ -z "${!var_name:-}" ]; then
+                echo "Error: falta GitHub Secret obligatorio '$var_name' para desplegar MinIO."
+                exit 1
+              fi
+            done
+
+            escape_sed() {
+              printf '%s' "$1" | sed -e 's/[\/&]/\\&/g'
+            }
+
+            echo "--- Aplicando secretos de MinIO ---"
+            sed \
+              -e "s/REPLACE_WITH_MINIO_ROOT_USER/$(escape_sed "$MINIO_ROOT_USER")/g" \
+              -e "s/REPLACE_WITH_MINIO_ROOT_PASSWORD/$(escape_sed "$MINIO_ROOT_PASSWORD")/g" \
+              secrets-templates/minio-root-credentials.yaml | kubectl apply -f -
+
+            sed \
+              -e "s/REPLACE_WITH_MINIO_SAAS_ACCESS_KEY/$(escape_sed "$MINIO_SAAS_ACCESS_KEY")/g" \
+              -e "s/REPLACE_WITH_MINIO_SAAS_SECRET_KEY/$(escape_sed "$MINIO_SAAS_SECRET_KEY")/g" \
+              -e "s/REPLACE_WITH_MINIO_INDUMENTARIA_ACCESS_KEY/$(escape_sed "$MINIO_INDUMENTARIA_ACCESS_KEY")/g" \
+              -e "s/REPLACE_WITH_MINIO_INDUMENTARIA_SECRET_KEY/$(escape_sed "$MINIO_INDUMENTARIA_SECRET_KEY")/g" \
+              secrets-templates/minio-app-credentials.yaml | kubectl apply -f -
+
             # Limpieza previa para evitar conflictos de tipo de Service/selector inmutable
             kubectl -n ingress-nginx delete service ingress-nginx-controller --ignore-not-found
             kubectl -n ingress-nginx delete deployment ingress-nginx-controller --ignore-not-found
@@ -95,7 +134,16 @@ jobs:
             # 2) Pagina de mantenimiento (placeholder) siempre disponible
             kubectl apply -k ingress/maintenance
 
-            # 3) Seleccionar backend para las reglas del Ingress
+            # 3) Storage S3 local (MinIO) para media
+            kubectl apply -k ingress/minio
+            kubectl -n default rollout status deployment/minio --timeout=180s
+
+            # Re-ejecuta bootstrap para mantener bucket/policies/users sincronizados
+            kubectl -n default delete job minio-bootstrap --ignore-not-found
+            kubectl -n default apply -f ingress/minio/bootstrap-job.yaml
+            kubectl -n default wait --for=condition=complete --timeout=180s job/minio-bootstrap
+
+            # 4) Seleccionar backend para las reglas del Ingress
             BACKEND_MODE="${{ inputs.backend_mode }}"
             if [ "$BACKEND_MODE" = "apps" ]; then
               INGRESS_FILE="ingress/global-ingress-apps.yaml"
@@ -107,4 +155,5 @@ jobs:
 
             kubectl apply -f "$INGRESS_FILE"
             kubectl get ingress ingress-principal -o wide
+            kubectl get ingress minio-api-ingress -o wide
             echo "Despliegue finalizado con modo backend: $BACKEND_MODE"

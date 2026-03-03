@@ -273,3 +273,37 @@ kubectl create secret generic db-credentials ...
   ```
   ```
 - Conecta las apps con el secreto `db-credentials` (`secrets-templates/db-credentials.txt`): host = IP del NAS, puerto = 5432 (o el que expongas), user/password los mismos del contenedor.
+
+## S3 local para media en VPS (MinIO)
+
+- El flujo `Despliegue Infra Completa VPS` ahora despliega MinIO para media privada.
+- Hay workflow dedicado para rotar claves S3 sin redeploy completo: `Configurar Credenciales S3 en VPS (MinIO)`.
+- Endpoint S3 publico: `https://s3.indutienda.com`.
+- Bucket unico: `media`.
+- Prefijos por app:
+  - `saas/`
+  - `indumentaria/`
+- Se crean politicas y usuarios por app mediante `ingress/minio/bootstrap-job.yaml`.
+
+### Secrets requeridos en GitHub (repo infra)
+
+- `MINIO_ROOT_USER`
+- `MINIO_ROOT_PASSWORD`
+- `MINIO_SAAS_ACCESS_KEY`
+- `MINIO_SAAS_SECRET_KEY`
+- `MINIO_INDUMENTARIA_ACCESS_KEY`
+- `MINIO_INDUMENTARIA_SECRET_KEY`
+
+### Archivos agregados
+
+- Manifests MinIO: `ingress/minio/`
+- Templates de secretos:
+  - `secrets-templates/minio-root-credentials.yaml`
+  - `secrets-templates/minio-app-credentials.yaml`
+- Guia completa:
+  - `docs/s3-media-vps.md`
+
+### Integracion en apps (SaaS / Indumentaria)
+
+Las dos apps deben usar `django-storages` + `boto3`, conectar al endpoint S3 y generar URLs firmadas (`AWS_QUERYSTRING_AUTH=true`).
+Ver pasos completos y snippet de settings en `docs/s3-media-vps.md`.

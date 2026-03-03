@@ -111,3 +111,48 @@ Cuando `indumentaria-service` y `saas-service` estén desplegados en el mismo na
   psql -h 127.0.0.1 -p 5432 -U "$POSTGRES_USER" -c 'CREATE DATABASE "software_venta";'
   ```
 - Crea/actualiza el secreto `db-credentials` con host = IP del NAS y puerto = 5432 (o el que uses) para que las apps apunten a esta BD externa, indicando la base correcta para cada app.
+
+## 10. S3 local para media en VPS (MinIO)
+
+El flujo de `Despliegue Infra Completa VPS` ahora incluye MinIO como almacenamiento S3-compatible para media.
+Tambien existe workflow dedicado para rotar solo credenciales S3: `Configurar Credenciales S3 en VPS (MinIO)`.
+
+### 10.1 Secrets requeridos en GitHub
+
+- `MINIO_ROOT_USER`
+- `MINIO_ROOT_PASSWORD`
+- `MINIO_SAAS_ACCESS_KEY`
+- `MINIO_SAAS_SECRET_KEY`
+- `MINIO_INDUMENTARIA_ACCESS_KEY`
+- `MINIO_INDUMENTARIA_SECRET_KEY`
+
+### 10.2 Recursos aplicados
+
+Desde `ingress/minio/`:
+- `PersistentVolume` estatico (`/srv/minio-data`)
+- `PersistentVolumeClaim`
+- `Deployment` `minio`
+- `Service` `minio-api`
+- `Ingress` `minio-api-ingress` con host `s3.indutienda.com`
+- `Job` `minio-bootstrap` (bucket/policies/users)
+
+### 10.3 Verificacion rapida
+
+```bash
+kubectl -n default get pods,svc,ingress | grep minio
+kubectl get pv minio-pv
+kubectl -n default get pvc minio-pvc
+kubectl -n default logs job/minio-bootstrap --tail=200
+```
+
+### 10.4 Integracion en apps (SaaS / Indumentaria)
+
+Las apps deben:
+- usar `django-storages` + `boto3`
+- apuntar a `AWS_S3_ENDPOINT_URL=https://s3.indutienda.com`
+- usar bucket `media`
+- usar `AWS_MEDIA_LOCATION=saas` o `AWS_MEDIA_LOCATION=indumentaria`
+- mantener `AWS_QUERYSTRING_AUTH=true` para URLs firmadas privadas
+
+Guia completa de integracion y migracion:
+- `docs/s3-media-vps.md`
